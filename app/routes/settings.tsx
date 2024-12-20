@@ -1,5 +1,26 @@
 import { Link, Outlet } from '@remix-run/react';
 
+//Uso de loader: Solo se usa en el servidor es "seguro", nunca se envia al cliente, por defecto lo serializa a un JSON y devuelve un objeto de respuesta
+
+//The Response interface of the Fetch API represents the response to a request
+/**
+ * import  {LoaderFunction, useLoaderData} from "remix";
+ * export const loader:LoaderFunction = ()=>{
+ * return new Response(JSON.stringify({message:"Hello,there!"},{
+ *    status:418,
+ *    headers:{
+ *      "Content-Type":"application/json", //Esto dice al navegador que espere un tipo json
+ *      //Despues de content-Type podemos poner mas en el header e incluso hacerlo custom
+ *    }}));
+ * }
+ *
+ * Dentro del componente donde se usa
+ * const data = useLoaderData();
+ *
+ * Renderizado mensaje:
+ * <p>Message from loader: {data.message}</p>
+ */
+
 function Settings() {
   return (
     <div>
