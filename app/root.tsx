@@ -5,6 +5,8 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useNavigation,
+  useResolvedPath,
 } from '@remix-run/react';
 import type { LinksFunction, MetaFunction } from '@remix-run/node';
 
@@ -76,7 +78,7 @@ export default function App() {
           <AppNavLink to="app">
             <BookIcon />
           </AppNavLink>
-          <AppNavLink to="app">
+          <AppNavLink to="settings">
             <SettingIcon />
           </AppNavLink>
         </ul>
@@ -96,17 +98,32 @@ type AppNavLinkProps = {
 //Se instala npm i classnames que ayuda con el renderizado condiconal de clases
 
 function AppNavLink({ children, to }: AppNavLinkProps) {
+  const path = useResolvedPath(to); //Saca la ruta absoluta a partir de la relativa de to
+  const navigation = useNavigation();
+  {
+    /**Solo navega a un link a la vez y se puede usar para un propio pending UI */
+  }
+
+  {
+    /**Con el pathname sacas la ruta absoluta y con to la relativa solo, tenemos que igualarlas, se usa el hook useResultPath */
+  }
+  const isLoading =
+    navigation.state === 'loading' &&
+    navigation.location.pathname === path.pathname;
+
   return (
     <li className="w-16">
       {/**NavLink es de remix y te permite aplicar estilos diferentes para decir en que link esta activo */}
+      {/**reloadDocument viene por defecto por el navegador, para la pending UI (Informar al usuario que se realiza una accion o esta cargando). Le dice a Remix que en vez de hacer una transaccion en el lado del cliente, solo queremos recargar toda la pagina y al hacer eso el navegador al ver que se carga de nuevo sabe como tratarlo como pending UI (Sale el icono de recarga)
+       * Otra opcion es CREAR UN CUSTOM PENDING UI con el hook use navigation
+       */}
       <NavLink to={to}>
         {({ isActive }) => (
           <div
             className={classNames(
               'py-4 flex justify-center hover:bg-primary-light',
-              {
-                'bg-primary-light': isActive,
-              },
+              isActive ? 'bg-primary-light' : '',
+              isLoading ? 'animate-pulse bg-primary-light' : '',
             )}
           >
             {children}
