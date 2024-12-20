@@ -1,7 +1,7 @@
 import {
-  Link,
   Links,
   Meta,
+  NavLink,
   Outlet,
   Scripts,
   ScrollRestoration,
@@ -9,6 +9,14 @@ import {
 import type { LinksFunction, MetaFunction } from '@remix-run/node';
 
 import './tailwind.css';
+import {
+  BookIcon,
+  DiscoverIcon,
+  HomeIcon,
+  SettingIcon,
+} from './components/icons';
+import React from 'react';
+import classNames from 'classnames';
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -42,7 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/**Se refiere a los link:css, link:js... de html */}
         <Links />
       </head>
-      <body>
+      <body className="md:flex md:h-screen">
         {children}
         {/**Sirve para emular una actividad del navegador para que el scroll se mantenga aunque viajes entre paginas. Navegor lo hace pero js no */}
         <ScrollRestoration />
@@ -57,13 +65,54 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <>
-      <nav>
-        <Link to="/">Home</Link>
-        <Link to="discover">Discover</Link>
-        <Link to="app">App</Link>
-        <Link to="settings">Settings</Link>
+      <nav className="bg-primary text-white">
+        <ul className="flex md:flex-col">
+          <AppNavLink to="/">
+            <HomeIcon />
+          </AppNavLink>
+          <AppNavLink to="discover">
+            <DiscoverIcon />
+          </AppNavLink>
+          <AppNavLink to="app">
+            <BookIcon />
+          </AppNavLink>
+          <AppNavLink to="app">
+            <SettingIcon />
+          </AppNavLink>
+        </ul>
       </nav>
-      <Outlet />
+      <div className="p-4">
+        <Outlet />
+      </div>
     </>
+  );
+}
+
+type AppNavLinkProps = {
+  children: React.ReactNode;
+  to: string;
+};
+
+//Se instala npm i classnames que ayuda con el renderizado condiconal de clases
+
+function AppNavLink({ children, to }: AppNavLinkProps) {
+  return (
+    <li className="w-16">
+      {/**NavLink es de remix y te permite aplicar estilos diferentes para decir en que link esta activo */}
+      <NavLink to={to}>
+        {({ isActive }) => (
+          <div
+            className={classNames(
+              'py-4 flex justify-center hover:bg-primary-light',
+              {
+                'bg-primary-light': isActive,
+              },
+            )}
+          >
+            {children}
+          </div>
+        )}
+      </NavLink>
+    </li>
   );
 }
