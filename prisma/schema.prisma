@@ -14,3 +14,25 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+//Para crear tablas creamos modelos. SIEMPRE CADA MODELO NECESITA @id (@=atributo, id=PK). ciud() genera id unico, NO PUEDE SER ESTATICO
+model PantryShelf{
+  id String @id @default(cuid())
+  name String 
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  items PantryItem[]
+}
+
+model PantryItem{
+  id String @id @default(cuid())
+  name String 
+  shelId String
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  shelf PantryShelf @relation(fields: [shelId],references: [id],onDelete: Cascade)
+}
