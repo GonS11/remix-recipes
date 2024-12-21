@@ -22,9 +22,10 @@ import { Link, Outlet, useLoaderData } from '@remix-run/react';
  * <p>Message from loader: {data.message}</p>
  */
 
-type LoaderData = {
+/* //Exportar este tipo en otro lado mejor
+export type LoaderData = {
   message: string;
-};
+}; SE USA EL TYPEOF LOADER MEJOR */
 
 export const loader: LoaderFunction = () => {
   return new Response(JSON.stringify({ message: 'Hello, there!' }), {
@@ -36,7 +37,8 @@ export const loader: LoaderFunction = () => {
 };
 
 function Settings() {
-  const data = useLoaderData<LoaderData>();
+  //const data = useMatchesData('routes/settings/profile');
+  const data = useLoaderData<typeof loader>();
   return (
     <div>
       <h1>Settings</h1>
@@ -54,3 +56,14 @@ function Settings() {
 }
 
 export default Settings;
+
+//Cada ruta puede tener un error boundary que se renderizara, si lo pones en root se ponda para todos
+export function ErrorBoundary() {
+  return (
+    <>
+      <div>
+        <p>Something went worng!</p>
+      </div>
+    </>
+  );
+}
