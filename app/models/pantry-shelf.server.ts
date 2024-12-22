@@ -4,5 +4,13 @@ import db from '~/db.server'; //IMPORTADO (Soluciona multiples instancias)
 //Crear modelos/querys
 export function getAllShelves() {
   //Recuperar todo de pantryshelf. findMany() devuelve una promesa
-  return db.pantryShelf.findMany();
+  return db.pantryShelf.findMany({
+    include: {
+      items: {
+        orderBy: {
+          name: 'asc',
+        },
+      },
+    },
+  });
 }
