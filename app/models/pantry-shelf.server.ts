@@ -2,13 +2,20 @@
 import db from '~/db.server'; //IMPORTADO (Soluciona multiples instancias)
 
 //Crear modelos/querys
-export function getAllShelves() {
+export function getAllShelves(query: string | null) {
   //Recuperar todo de pantryshelf. findMany() devuelve una promesa
   return db.pantryShelf.findMany({
+    where: {
+      name: {
+        //NOMBRE
+        contains: query ?? '', // Filtro parcial por nombre
+        mode: 'insensitive', // Ignorar mayúsculas/minúsculas
+      },
+    },
     include: {
       items: {
         orderBy: {
-          name: 'asc',
+          name: 'asc', // Ordenar los ítems alfabéticamente
         },
       },
     },
