@@ -1,8 +1,14 @@
-import { useLoaderData, useSearchParams } from '@remix-run/react';
-import { getAllShelves } from '~/models/pantry-shelf.server';
+import {
+  Form,
+  useLoaderData,
+  useNavigation,
+  useSearchParams,
+} from '@remix-run/react';
+import { createShelf, getAllShelves } from '~/models/pantry-shelf.server';
 import { classNames } from '~/utils/misc';
-import { LoaderFunctionArgs } from '@remix-run/node';
-import { SearchIcon } from '~/components/icons';
+import { ActionFunction, LoaderFunctionArgs } from '@remix-run/node';
+import { PlusIcon, SearchIcon } from '~/components/icons';
+import { PrimaryButton } from '~/components/form';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -15,15 +21,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { shelves };
 }
 
+export const action: ActionFunction = async () => {
+  return createShelf();
+};
+
 function Pantry() {
   const data = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
+
+  //Para el Form
+  const navigation = useNavigation();
+  const isSearching = navigation.formData?.has('q'); //FormData es un objeto, necesitamos metodo has() con la clave del name del form
   return (
     <div>
-      <form
+      <Form
         className={classNames(
-          'flex border-2 border-gray-300 rounded-md mb-4',
+          'flex border-2 border-gray-300 rounded-md',
           'focus-within:border-primary md:w-80',
+          isSearching ? 'animate-pulse' : '',
         )}
       >
         <button className="px-2 mr-1">
@@ -37,10 +52,17 @@ function Pantry() {
           placeholder="Search Shelves..."
           className="w-full py-3 px-2 outline-none"
         />
-      </form>
+      </Form>
+      {/**reloadDocument desactiva la recarga parcial de remix y recarga la pagina por completo. Este Form seria como un form normal pero con js */}
+      <Form method="post" reloadDocument>
+        <PrimaryButton className="mt-4 w-full md:w-fit">
+          <PlusIcon />
+          <span className="pl-2">Create Shelf</span>
+        </PrimaryButton>
+      </Form>
       <ul
         className={classNames(
-          'flex gap-8 overflow-x-auto',
+          'flex gap-8 overflow-x-auto mt-4 pb-6',
           'snap-x snap-mandatory md:snap-none',
         )}
       >

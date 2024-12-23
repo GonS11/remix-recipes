@@ -67,10 +67,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 //La ffc App solo devuelve Outlet, solo renderiza las nest-routes indicadas. Como pertenece a root, se renderiza siempre y siempre esta, por lo que si añadimos rutas de navegacion todos lo tendran y su contenido se renderizara en Outlet
 export default function App() {
   //useMatches: Agrupa todas las rutas que importan de la pagina y dice informacion sobre cada una (data/resultado del loader,id...). Te permite extraer esa data de cualquier ruta hija o padre en cualquier sitio y siempre tienes acceso a esa informacion
-  const matches = useMatches();
+  /* const matches = useMatches();
   React.useEffect(() => {
     console.log(matches);
-  }, [matches]);
+  }, [matches]); */
   return (
     <>
       <nav className="bg-primary text-white">
@@ -89,7 +89,7 @@ export default function App() {
           </AppNavLink>
         </ul>
       </nav>
-      <div className="p-4 w-full">
+      <div className="p-4 w-full md:w-[calc(100%-4rem)]">
         <Outlet />
       </div>
     </>
