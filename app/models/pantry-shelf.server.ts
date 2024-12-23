@@ -28,7 +28,15 @@ export function getAllShelves(query: string | null) {
 export function createShelf() {
   return db.pantryShelf.create({
     data: {
-      name: 'NewShelf',
+      name: 'New Shelf',
+    },
+  });
+}
+
+export function deleteShelf(shelfId: string) {
+  return db.pantryShelf.delete({
+    where: {
+      id: shelfId,
     },
   });
 }

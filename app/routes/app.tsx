@@ -18,7 +18,7 @@ function App() {
           Pantry
         </NavLink>
       </nav>
-      <div className="py-4">
+      <div className="py-4 overflow-y-auto">
         <Outlet />
       </div>
     </div>
