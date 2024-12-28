@@ -54,7 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/**Se refiere a los link:css, link:js... de html */}
         <Links />
       </head>
-      <body className="md:flex md:h-screen">
+      <body className="md:flex md:h-screen bg-background">
         {children}
         {/**Sirve para emular una actividad del navegador para que el scroll se mantenga aunque viajes entre paginas. Navegor lo hace pero js no */}
         <ScrollRestoration />

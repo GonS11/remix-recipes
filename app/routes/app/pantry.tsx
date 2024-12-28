@@ -1,5 +1,6 @@
 import {
   Form,
+  useFetcher,
   useLoaderData,
   useNavigation,
   useSearchParams,
@@ -55,10 +56,15 @@ function Pantry() {
   const data = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
 
+  const createShelfFetcher = useFetcher();
+
   //Para el Form
   const navigation = useNavigation();
   const isSearching = navigation.formData?.has('q'); //FormData es un objeto, necesitamos metodo has() con la clave del name del form
-  const isCreatingShelf = navigation.formData?.get('_action') === 'createShelf';
+  //YA NO, que no navegamos al crear const isCreatingShelf = navigation.formData?.get('_action') === 'createShelf';
+  const isCreatingShelf =
+    createShelfFetcher.formData?.get('_action') === 'createShelf';
+
   return (
     <div>
       <Form
@@ -81,7 +87,7 @@ function Pantry() {
         />
       </Form>
       {/**reloadDocument desactiva la recarga parcial de remix y recarga la pagina por completo. Este Form seria como un form normal pero con js */}
-      <Form method="post">
+      <createShelfFetcher.Form method="post">
         <PrimaryButton
           name="_action"
           value="createShelf"
@@ -92,55 +98,85 @@ function Pantry() {
             {isCreatingShelf ? 'Creating Shelf' : 'Create Shelf'}
           </span>
         </PrimaryButton>
-      </Form>
+      </createShelfFetcher.Form>
       <ul
         className={classNames(
           'flex gap-8 overflow-x-auto mt-4 pb-6',
           'snap-x snap-mandatory md:snap-none',
         )}
       >
-        {data.shelves.map((shelf) => {
-          {
-            /**Para pending UI */
-          }
-          const isDeletingShelf =
-            navigation.formData?.get('_action') === 'deleteShelf' &&
-            navigation.formData?.get('shelfId') === shelf.id;
-          return (
-            <li
-              key={shelf.id}
-              className={classNames(
-                'border-2 border-primary rounded-md p-4 h-fit',
-                'w-[calc(100vw-2rem)] flex-none snap-center',
-                'md:w-96',
-              )}
-            >
-              <h1 className="text-2xl font-extrabold mb-2">{shelf.name}</h1>
-              <ul>
-                {shelf.items.map((item) => (
-                  <li key={item.id} className="py-2">
-                    {item.name}
-                  </li>
-                ))}
-              </ul>
-              <Form method="post" className="pt-8">
-                {/**Asi incluimos y mandamos el id del shelf para mandar pero no se ve */}
-                <input type="hidden" name="shelfId" value={shelf.id} />
-                <DeleteButton
-                  className="w-full"
-                  name="_action"
-                  value="deleteShelf"
-                  isLoading={isDeletingShelf}
-                >
-                  {isDeletingShelf ? 'Deleting Shelf' : 'Delete Shelf'}
-                </DeleteButton>
-              </Form>
-            </li>
-          );
-        })}
+        {data.shelves.map((shelf) => (
+          <Shelf key={shelf.id} shelf={shelf} />
+        ))}
       </ul>
     </div>
   );
 }
 
 export default Pantry;
+
+type ShelfProps = {
+  shelf: {
+    id: string;
+    name: string;
+    items: {
+      id: string;
+      name: string;
+    }[]; //IMP []
+  };
+};
+
+function Shelf({ shelf }: ShelfProps) {
+  const deleteShelfFetcher = useFetcher();
+  const saveShelfNameFetcher = useFetcher();
+
+  const isDeletingShelf =
+    deleteShelfFetcher.formData?.get('_action') === 'deleteShelf' &&
+    deleteShelfFetcher.formData?.get('shelfId') === shelf.id;
+
+  return (
+    <li
+      key={shelf.id}
+      className={classNames(
+        'border-2 border-primary rounded-md p-4 h-fit',
+        'w-[calc(100vw-2rem)] flex-none snap-center',
+        'md:w-96',
+      )}
+    >
+      <saveShelfNameFetcher.Form method="post" reloadDocument>
+        <input
+          type="text"
+          className={classNames(
+            'text-2xl font-extrabold mb-2 w-full outline-none',
+            'border-b-2 focus:border-b-primary',
+          )}
+          defaultValue={shelf.name}
+          name="shelfName"
+          placeholder="Shelf Name"
+          autoComplete="off"
+        />
+      </saveShelfNameFetcher.Form>
+
+      <ul>
+        {shelf.items.map((item) => (
+          <li key={item.id} className="py-2">
+            {item.name}
+          </li>
+        ))}
+      </ul>
+      {/**Al poner el hook al form, este fetcher aun renderiza y envia el formulario pero SIN navegacion, actualiza el estado local NO EL GLOBAL */}
+      <deleteShelfFetcher.Form method="post" className="pt-8">
+        {/**Asi incluimos y mandamos el id del shelf para mandar pero no se ve */}
+        <input type="hidden" name="shelfId" value={shelf.id} />
+        <DeleteButton
+          className="w-full"
+          name="_action"
+          value="deleteShelf"
+          isLoading={isDeletingShelf}
+        >
+          {isDeletingShelf ? 'Deleting Shelf' : 'Delete Shelf'}
+        </DeleteButton>
+      </deleteShelfFetcher.Form>
+    </li>
+  );
+}
