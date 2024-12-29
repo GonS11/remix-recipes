@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, HTMLAttributes } from 'react';
 import { classNames } from '~/utils/misc';
 
 //Se crea una interfaz para no tener que añadir uno a uno todos los atributos que usas
@@ -45,4 +45,12 @@ export function DeleteButton({ className, isLoading, ...props }: ButtonProps) {
       )}
     ></Button>
   );
+}
+
+interface ErrorMessageProps extends HTMLAttributes<HTMLParagraphElement> {}
+
+export function ErrorMessage({ className, ...props }: ErrorMessageProps) {
+  return props.children ? (
+    <p {...props} className={classNames('text-red-600 text-xs', className)}></p>
+  ) : null;
 }
