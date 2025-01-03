@@ -13,7 +13,7 @@ import {
 } from '~/models/pantry-shelf.server';
 import { classNames } from '~/utils/misc';
 import { ActionFunction, LoaderFunctionArgs } from '@remix-run/node';
-import { PlusIcon, SaveIcon, SearchIcon } from '~/components/icons';
+import { PlusIcon, SaveIcon, SearchIcon, TrashIcon } from '~/components/icons';
 import { DeleteButton, ErrorMessage, PrimaryButton } from '~/components/forms';
 import { z } from 'zod';
 import validateForm from '~/utils/validation';
@@ -46,6 +46,10 @@ const saveShelfNameSchema = z.object({
 const createShelfItemSchema = z.object({
   shelfId: z.string(),
   itemName: z.string().min(1, 'Item name cannot be blank'),
+});
+
+const deleteShelfItemSchema = z.object({
+  itemId: z.string(),
 });
 
 //---------ACTION------
@@ -81,6 +85,14 @@ export const action: ActionFunction = async ({
         formData,
         createShelfItemSchema,
         (data) => createShelfItem(data.shelfId, data.itemName),
+        (errors) => ({ errors, status: 400 }),
+      );
+    }
+    case 'deleteShelfItem': {
+      return validateForm(
+        formData,
+        deleteShelfItemSchema,
+        (data) => data.itemId,
         (errors) => ({ errors, status: 400 }),
       );
     }
@@ -157,6 +169,20 @@ export default Pantry;
 
 //--------------SHELF-------------------------
 
+//Definir LoaderData para obtener los valores de manera dinamica y no desglosarlo manualmente
+
+type LoaderData = {
+  shelves: {
+    id: string;
+    name: string;
+    items: {
+      id: string;
+      name: string;
+    }[];
+  }[];
+};
+
+/* Tipado MANUAL
 type ShelfProps = {
   shelf: {
     id: string;
@@ -166,6 +192,11 @@ type ShelfProps = {
       name: string;
     }[]; //IMP []
   };
+};*/
+
+// TIPADO DINAMICO
+type ShelfProps = {
+  shelf: LoaderData['shelves'][number];
 };
 
 function Shelf({ shelf }: ShelfProps) {
@@ -249,9 +280,7 @@ function Shelf({ shelf }: ShelfProps) {
 
       <ul>
         {shelf.items.map((item) => (
-          <li key={item.id} className="py-2">
-            {item.name}
-          </li>
+          <ShelfItem key={item.id} shelfItem={item} />
         ))}
       </ul>
       {/**Al poner el hook al form, este fetcher aun renderiza y envia el formulario pero SIN navegacion, actualiza el estado local NO EL GLOBAL */}
@@ -265,6 +294,47 @@ function Shelf({ shelf }: ShelfProps) {
           Delete Shelf
         </DeleteButton>
       </deleteShelfFetcher.Form>
+    </li>
+  );
+}
+
+//---------------SHELF ITEM----------------
+/**Tipado MANUAL
+ * 
+ * type ShelfItemProps = {
+  shelfItem: {
+    id: string;
+    name: string;
+  };
+};
+ * 
+ */
+
+type ShelfItemProps = {
+  shelfItem: LoaderData['shelves'][number]['items'][number];
+};
+
+//Se crea para poder usar el fetcher para eliminar item que dentro del codigo "visual" no se ponen hooks
+//Crear form para eliminar
+function ShelfItem({ shelfItem }: ShelfItemProps) {
+  const deleteShelfItemFetcher = useFetcher();
+
+  return (
+    <li className="py-2">
+      <deleteShelfItemFetcher.Form
+        method="post"
+        className="flex"
+        reloadDocument
+      >
+        <p className="w-full">{shelfItem.name}</p>
+        <button name="_action" value="deleteShelfItem">
+          <TrashIcon />
+        </button>
+        <input type="hidden" name="itemId" value={shelfItem.id} />
+        <ErrorMessage className="pl-2">
+          {deleteShelfItemFetcher.data?.errors?.itemId}
+        </ErrorMessage>
+      </deleteShelfItemFetcher.Form>
     </li>
   );
 }
