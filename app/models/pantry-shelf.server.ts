@@ -1,6 +1,7 @@
 //Crear modelos para que no vayan directos a PrismaClient sino que apunten a los modelos y todos los modelos a un PrismaCLient asi si queremos cambiar el ORM en el futuro o PrismaClient cambia de API o algo parecido es mas facil cambiarlo.
 import { Prisma } from '@prisma/client';
 import db from '~/db.server'; //IMPORTADO (Soluciona multiples instancias)
+import { handleDelete } from './utils';
 
 //Crear modelos/querys
 export function getAllShelves(query: string | null) {
@@ -35,7 +36,14 @@ export function createShelf() {
 }
 
 export async function deleteShelf(shelfId: string) {
-  //Hacer control para borrado multiple (Le das a eliminar y mientras se elimina le das de nuevo .delete() te lanza un error)
+  return handleDelete(() =>
+    db.pantryShelf.delete({
+      where: {
+        id: shelfId,
+      },
+    }),
+  );
+  /*  //Hacer control para borrado multiple (Le das a eliminar y mientras se elimina le das de nuevo .delete() te lanza un error)
   try {
     //Tienes que poner await pq sino no entra en el catch tiene que haberse ejecutado
     const deleted = await db.pantryShelf.delete({
@@ -53,7 +61,7 @@ export async function deleteShelf(shelfId: string) {
       }
     }
     throw error;
-  }
+  } */
 }
 
 export function saveShelfName(shelfId: string, shelfName: string) {

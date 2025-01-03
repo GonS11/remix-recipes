@@ -29,10 +29,10 @@ model PantryShelf{
 model PantryItem{
   id String @id @default(cuid())
   name String 
-  shelId String
+  shelfId String
 
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  shelf PantryShelf @relation(fields: [shelId],references: [id],onDelete: Cascade)
+  shelf PantryShelf @relation(fields: [shelfId],references: [id],onDelete: Cascade)
 }
