@@ -17,7 +17,8 @@ import { PlusIcon, SaveIcon, SearchIcon, TrashIcon } from '~/components/icons';
 import { DeleteButton, ErrorMessage, PrimaryButton } from '~/components/forms';
 import { z } from 'zod';
 import validateForm from '~/utils/validation';
-import createShelfItem from '~/models/pantry-item.server';
+import React from 'react';
+import { createShelfItem, deleteShelfItem } from '~/models/pantry-item.server';
 
 //----------LOADER----------
 
@@ -92,7 +93,7 @@ export const action: ActionFunction = async ({
       return validateForm(
         formData,
         deleteShelfItemSchema,
-        (data) => data.itemId,
+        (data) => deleteShelfItem(data.itemId),
         (errors) => ({ errors, status: 400 }),
       );
     }
@@ -204,6 +205,11 @@ function Shelf({ shelf }: ShelfProps) {
   const saveShelfNameFetcher = useFetcher();
   const createShelfItemFetcher = useFetcher();
 
+  const createItemFormRef = React.useRef<HTMLFormElement>(null);
+
+  //shelf.items son los saveItems del loader
+  const { renderedItems, addItem } = useOptimisticItems(shelf.items);
+
   const isDeletingShelf =
     deleteShelfFetcher.formData?.get('_action') === 'deleteShelf' &&
     deleteShelfFetcher.formData?.get('shelfId') === shelf.id;
@@ -249,7 +255,32 @@ function Shelf({ shelf }: ShelfProps) {
         </ErrorMessage>
       </saveShelfNameFetcher.Form>
 
-      <createShelfItemFetcher.Form method="post" className="flex py-2">
+      <createShelfItemFetcher.Form
+        method="post"
+        className="flex py-2"
+        ref={createItemFormRef}
+        onSubmit={(event) => {
+          const target = event.target as HTMLFormElement; //Explicitamente le dices el tipo de target para acceder a elements
+          const itemNameInput = target.elements.namedItem(
+            'itemName',
+          ) as HTMLInputElement; //Ayudar al tipado tambien
+
+          addItem(itemNameInput.value);
+
+          event.preventDefault(); //Evitar que se envie el formulario
+
+          //Hacemos el submit de enviar nosotros
+          createShelfItemFetcher.submit(
+            {
+              itemName: itemNameInput.value,
+              shelfId: shelf.id,
+              _action: 'createShelfItem',
+            },
+            { method: 'post' },
+          );
+          createItemFormRef.current?.reset(); //Resetea los inputs del form
+        }}
+      >
         <div className="w-full mb-2">
           <input
             type="text"
@@ -279,7 +310,11 @@ function Shelf({ shelf }: ShelfProps) {
       </createShelfItemFetcher.Form>
 
       <ul>
-        {shelf.items.map((item) => (
+        {/*Se comenta pq mejor renderizar d eun estado que se actuariza correctamente para renderedItems
+        shelf.items.map((item) => (
+          <ShelfItem key={item.id} shelfItem={item} />
+        ))*/}
+        {renderedItems.map((item) => (
           <ShelfItem key={item.id} shelfItem={item} />
         ))}
       </ul>
@@ -311,7 +346,8 @@ function Shelf({ shelf }: ShelfProps) {
  */
 
 type ShelfItemProps = {
-  shelfItem: LoaderData['shelves'][number]['items'][number];
+  //shelfItem: LoaderData['shelves'][number]['items'][number];
+  shelfItem: RenderedItem; //Pq renderizamos de renderedItems no de shelf.items
 };
 
 //Se crea para poder usar el fetcher para eliminar item que dentro del codigo "visual" no se ponen hooks
@@ -327,9 +363,12 @@ function ShelfItem({ shelfItem }: ShelfItemProps) {
         reloadDocument
       >
         <p className="w-full">{shelfItem.name}</p>
-        <button name="_action" value="deleteShelfItem">
-          <TrashIcon />
-        </button>
+        {/**Si es optimista se deshabilita */}
+        {shelfItem.isOptimistic ? null : (
+          <button name="_action" value="deleteShelfItem">
+            <TrashIcon />
+          </button>
+        )}
         <input type="hidden" name="itemId" value={shelfItem.id} />
         <ErrorMessage className="pl-2">
           {deleteShelfItemFetcher.data?.errors?.itemId}
@@ -337,4 +376,46 @@ function ShelfItem({ shelfItem }: ShelfItemProps) {
       </deleteShelfItemFetcher.Form>
     </li>
   );
+}
+
+//--------------OPTIMISTIC ITEMS----------
+type RenderedItem = {
+  id: string; //Tenemos que crear un id temporal siempre que creemos un item optimista
+  name: string;
+  isOptimistic?: boolean; //Sirve para deshabilitar el boton de eliminar item, ya que si es optimista y aun no se ha renderizado no funciona y es inutil hasta que no se renderize del todo
+};
+
+function useOptimisticItems(savedItems: Array<RenderedItem>) {
+  const [optimisticItems, setOptimisticItems] = React.useState<
+    Array<RenderedItem>
+  >([]);
+
+  const renderedItems = [...optimisticItems, ...savedItems];
+
+  //Ordenar alfabeticamente renderedItems
+  renderedItems.sort((a, b) => {
+    if (a.name === b.name) return 0;
+    //Si devuelve -1 se ordena como menor
+    return a.name < b.name ? -1 : 1;
+  });
+
+  //useLayoutEffect es como useEffect pero se ejecuta antes de que react incluya los cambios en la UI
+  //Sirve para eliminar los items optimistas cuando se renderizan los del servidor
+  React.useLayoutEffect(() => {
+    setOptimisticItems([]);
+  }, [savedItems]);
+
+  const addItem = (name: string) => {
+    setOptimisticItems((prevItems) => [
+      ...prevItems,
+      { id: createItemId(), name, isOptimistic: true },
+    ]);
+  };
+
+  return { renderedItems, addItem };
+}
+
+function createItemId() {
+  //Crea un id aleatorio para optimisticUI Item
+  return `${Math.round(Math.random() * 1_000_000)}`;
 }
