@@ -33,7 +33,7 @@ model User{
 model PantryShelf{
   id String @id @default(cuid())
   name String 
-  userId String //Nuevo para r/c User
+  userId String 
 
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt

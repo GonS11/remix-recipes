@@ -29,6 +29,7 @@ function getShelves(userId: string) {
       },
     },
     {
+      userId,
       name: 'Fruits',
       items: {
         create: [

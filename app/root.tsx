@@ -17,6 +17,7 @@ import {
   BookIcon,
   DiscoverIcon,
   HomeIcon,
+  LoginIcon,
   SettingIcon,
 } from './components/icons';
 import React from 'react';
@@ -74,7 +75,12 @@ export default function App() {
   }, [matches]); */
   return (
     <>
-      <nav className="bg-primary text-white">
+      <nav
+        className={classNames(
+          'bg-primary text-white md:w-16',
+          'flex justify-between md:flex-col', //Para que en mobile este login a la dereche nav y desktop este abajo
+        )}
+      >
         <ul className="flex md:flex-col">
           <AppNavLink to="/">
             <HomeIcon />
@@ -87,6 +93,11 @@ export default function App() {
           </AppNavLink>
           <AppNavLink to="settings">
             <SettingIcon />
+          </AppNavLink>
+        </ul>
+        <ul>
+          <AppNavLink to="/login">
+            <LoginIcon />
           </AppNavLink>
         </ul>
       </nav>
