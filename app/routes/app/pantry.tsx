@@ -11,7 +11,7 @@ import {
   getAllShelves,
   saveShelfName,
 } from '~/models/pantry-shelf.server';
-import { classNames } from '~/utils/misc';
+import { classNames, useIsHydrated, useServerLayoutEffect } from '~/utils/misc';
 import { ActionFunction, LoaderFunctionArgs } from '@remix-run/node';
 import { PlusIcon, SaveIcon, SearchIcon, TrashIcon } from '~/components/icons';
 import { DeleteButton, ErrorMessage, PrimaryButton } from '~/components/forms';
@@ -208,7 +208,12 @@ function Shelf({ shelf }: ShelfProps) {
   const createItemFormRef = React.useRef<HTMLFormElement>(null);
 
   //shelf.items son los saveItems del loader
-  const { renderedItems, addItem } = useOptimisticItems(shelf.items);
+  const { renderedItems, addItem } = useOptimisticItems(
+    shelf.items,
+    createShelfItemFetcher.state,
+  );
+
+  const isHydrated = useIsHydrated();
 
   const isDeletingShelf =
     deleteShelfFetcher.formData?.get('_action') === 'deleteShelf' &&
@@ -226,9 +231,14 @@ function Shelf({ shelf }: ShelfProps) {
     >
       {/**Se usa optimistic UI, definir mensaje de error */}
       <saveShelfNameFetcher.Form method="post" className="flex">
-        <div className="w-full mb-2">
+        <div className="w-full mb-2 peer">
           <input
             type="text"
+            required
+            defaultValue={shelf.name}
+            name="shelfName"
+            placeholder="Shelf Name"
+            autoComplete="off"
             className={classNames(
               'text-2xl font-extrabold mb-2 w-full outline-none',
               'border-b-2 border-b-background focus:border-b-primary',
@@ -236,19 +246,37 @@ function Shelf({ shelf }: ShelfProps) {
                 ? 'border-b-red-600'
                 : '',
             )}
-            defaultValue={shelf.name}
-            name="shelfName"
-            placeholder="Shelf Name"
-            autoComplete="off"
+            onChange={(event) =>
+              //Validar si no esta vacio
+              event.target.value !== '' &&
+              saveShelfNameFetcher.submit(
+                {
+                  _action: 'saveShelfName',
+                  shelfName: event.target.value,
+                  shelfId: shelf.id,
+                },
+                { method: 'post' },
+              )
+            }
           />
           <ErrorMessage>
             {saveShelfNameFetcher.data?.errors?.shelfId}
           </ErrorMessage>
         </div>
-
-        <button name="_action" value="saveShelfName" className="ml-4">
-          <SaveIcon />
-        </button>
+        {/**Mostrar boton de nuevo nombre si no esta hidratado, si no activas js, tira de html y carga este button para poder insertar un nuevo nombre */}
+        {isHydrated ? null : (
+          <button
+            name="_action"
+            value="saveShelfName"
+            className={classNames(
+              'ml-4 opacity-0 hover:opacity-100 focus:opacity-100',
+              'peer-focus-within:opacity-100',
+              'transition-opacity duration-200',
+            )}
+          >
+            <SaveIcon />
+          </button>
+        )}
         <input type="hidden" name="shelfId" value={shelf.id} />
         <ErrorMessage className="pl-2">
           {saveShelfNameFetcher.data?.errors?.shelfId}
@@ -257,7 +285,7 @@ function Shelf({ shelf }: ShelfProps) {
 
       <createShelfItemFetcher.Form
         method="post"
-        className="flex py-2"
+        className="flex py-2 peer"
         ref={createItemFormRef}
         onSubmit={(event) => {
           const target = event.target as HTMLFormElement; //Explicitamente le dices el tipo de target para acceder a elements
@@ -284,6 +312,10 @@ function Shelf({ shelf }: ShelfProps) {
         <div className="w-full mb-2">
           <input
             type="text"
+            required
+            name="itemName"
+            placeholder="New Item"
+            autoComplete="off"
             className={classNames(
               'w-full outline-none',
               'border-b-2 border-b-background focus:border-b-primary',
@@ -291,16 +323,21 @@ function Shelf({ shelf }: ShelfProps) {
                 ? 'border-b-red-600'
                 : '',
             )}
-            name="itemName"
-            placeholder="New Item"
-            autoComplete="off"
           />
           <ErrorMessage>
             {createShelfItemFetcher.data?.errors?.shelfId}
           </ErrorMessage>
         </div>
 
-        <button name="_action" value="createShelfItem" className="ml-4">
+        <button
+          name="_action"
+          value="createShelfItem"
+          className={classNames(
+            'ml-4 opacity-0 hover:opacity-100 focus:opacity-100',
+            'peer-focus-within:opacity-100',
+            'transition-opacity duration-200',
+          )}
+        >
           <SaveIcon />
         </button>
         <input type="hidden" name="shelfId" value={shelf.id} />
@@ -319,7 +356,15 @@ function Shelf({ shelf }: ShelfProps) {
         ))}
       </ul>
       {/**Al poner el hook al form, este fetcher aun renderiza y envia el formulario pero SIN navegacion, actualiza el estado local NO EL GLOBAL */}
-      <deleteShelfFetcher.Form method="post" className="pt-8">
+      <deleteShelfFetcher.Form
+        method="post"
+        className="pt-8"
+        onSubmit={(event) => {
+          if (!confirm('Are you sure you want to delete this shelf?')) {
+            event.preventDefault(); //Se evita que s eenvie si damos a no
+          }
+        }}
+      >
         {/**Asi incluimos y mandamos el id del shelf para mandar pero no se ve */}
         <input type="hidden" name="shelfId" value={shelf.id} />
         <ErrorMessage className="pb-2">
@@ -354,14 +399,11 @@ type ShelfItemProps = {
 //Crear form para eliminar
 function ShelfItem({ shelfItem }: ShelfItemProps) {
   const deleteShelfItemFetcher = useFetcher();
+  const isDeletingItem = !!deleteShelfItemFetcher.formData; //Los !! convierten el formData en boolean. Sera true si la validacion se esta llevando a cabo
 
-  return (
+  return isDeletingItem ? null : (
     <li className="py-2">
-      <deleteShelfItemFetcher.Form
-        method="post"
-        className="flex"
-        reloadDocument
-      >
+      <deleteShelfItemFetcher.Form method="post" className="flex">
         <p className="w-full">{shelfItem.name}</p>
         {/**Si es optimista se deshabilita */}
         {shelfItem.isOptimistic ? null : (
@@ -385,7 +427,10 @@ type RenderedItem = {
   isOptimistic?: boolean; //Sirve para deshabilitar el boton de eliminar item, ya que si es optimista y aun no se ha renderizado no funciona y es inutil hasta que no se renderize del todo
 };
 
-function useOptimisticItems(savedItems: Array<RenderedItem>) {
+function useOptimisticItems(
+  savedItems: Array<RenderedItem>,
+  createShelfItemState: 'idle' | 'submitting' | 'loading',
+) {
   const [optimisticItems, setOptimisticItems] = React.useState<
     Array<RenderedItem>
   >([]);
@@ -401,9 +446,12 @@ function useOptimisticItems(savedItems: Array<RenderedItem>) {
 
   //useLayoutEffect es como useEffect pero se ejecuta antes de que react incluya los cambios en la UI
   //Sirve para eliminar los items optimistas cuando se renderizan los del servidor
-  React.useLayoutEffect(() => {
-    setOptimisticItems([]);
-  }, [savedItems]);
+  useServerLayoutEffect(() => {
+    if (createShelfItemState === 'idle') {
+      //Prevenir un bug que elimina item si se borra a la vez que se crea otro, que se controle segun el estado de actualizacion/renderizado este
+      setOptimisticItems([]);
+    }
+  }, [createShelfItemState]);
 
   const addItem = (name: string) => {
     setOptimisticItems((prevItems) => [

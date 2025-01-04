@@ -1,5 +1,5 @@
 import { useMatches } from '@remix-run/react';
-import { useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 
 /**No se donde se usa */
 export function classNames(...names: Array<string | undefined>) {
@@ -23,3 +23,25 @@ export function useMatchesData(id: string) {
 
   return route?.data;
 }
+
+let hasHydrated = false; //Empieza false para que no piense que sta hidratado aun
+
+export function useIsHydrated() {
+  const [isHydrated, setIsHydrated] = React.useState(hasHydrated);
+
+  React.useEffect(() => {
+    hasHydrated = true; //Con esto permites que si ya se ha hidratado antes se hidrate al momento
+    setIsHydrated(true);
+  }, []);
+
+  return isHydrated;
+}
+
+//Para saber si esta en servidor o no ejecutandose para usar layoutEffect (solo cliente) o no
+export function isRunningOnServer() {
+  return typeof window === 'undefined'; //Sabemos que es el servidor pq window es el cliente/navegador
+}
+
+export const useServerLayoutEffect = isRunningOnServer()
+  ? useEffect
+  : useLayoutEffect;
