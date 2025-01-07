@@ -1,9 +1,9 @@
-import { ActionFunction, LoaderFunction } from '@remix-run/node';
+import { ActionFunction, LoaderFunction, redirect } from '@remix-run/node';
 import { useActionData } from '@remix-run/react';
 import { z } from 'zod';
 import { ErrorMessage, PrimaryButton } from '~/components/forms';
-import { userIdCookie } from '~/cookies';
 import getUser from '~/models/user.server';
+import { commitSession, getSession } from '~/sessions';
 import { classNames } from '~/utils/misc';
 import validateForm from '~/utils/validation';
 
@@ -27,8 +27,10 @@ export const loader: LoaderFunction = async ({ request }) => {
   console.log('Request Cookie Header:', cookieHeader); // Log para depurar el header completo de cookies
 
   // Parseamos la cookie específica `remix-recipes__userId`
-  const cookieValue = await userIdCookie.parse(cookieHeader);
-  console.log('Parsed Cookie Value:', cookieValue); // Log para depurar el valor parseado de la cookie
+  const session = await getSession(cookieHeader);
+  //Antes asi: const cookieValue = await sessionCookie.parse(cookieHeader);
+  console.log('Session data:', session.data); // Log para depurar el valor de session data
+  console.log('Session user ID:', session.get('userId')); //Atributos flsh, get, has, set, unset... (Pero ninguna le pasa la info a la session storage a menos que se use commitSession, no getSession)
 
   // Si no hay cookies, retornamos `null` (o podríamos redirigir si es necesario)
   return null;
@@ -37,6 +39,10 @@ export const loader: LoaderFunction = async ({ request }) => {
 // Acción para manejar el login
 // Esta función recibe los datos del formulario, valida el email y configura una cookie con el ID del usuario.
 export const action: ActionFunction = async ({ request }) => {
+  //Usar session para almacenar userID
+  const cookieHeader = request.headers.get('cookie');
+  const session = await getSession(cookieHeader);
+
   // Obtenemos los datos enviados desde el formulario
   const formData = await request.formData();
 
@@ -44,34 +50,34 @@ export const action: ActionFunction = async ({ request }) => {
     formData,
     loginSchema, // Validamos el formulario usando un esquema definido con Zod
     async ({ email }) => {
-      // Buscamos al usuario en la base de datos usando su email
+      // Buscamos al usuario en la base de datos utilizando su email
       const user = await getUser(email);
 
-      // Si no existe el usuario, devolvemos un error con status 401
-      if (!user) {
+      // Si no existe el usuario, devolvemos un error con el estado HTTP 401 (No autorizado)
+      if (user === null) {
         return {
           errors: { email: 'User with this email does not exist' },
           status: 401,
         };
       }
 
-      // Serializamos el ID del usuario para almacenarlo en una cookie segura
-      const serializedCookie = await userIdCookie.serialize(user.id);
-      console.log('Set-Cookie Header:', serializedCookie); // Log para depurar el valor de la cookie serializada
+      //Cuando sabemos que no es null guardamos ID
+      session.set('userId', user.id);
 
-      // Configuramos la respuesta con el encabezado `Set-Cookie`
-      return {
-        user, // Incluimos los datos del usuario si todo está bien
+      // Serializamos el ID del usuario para almacenarlo en una cookie segura
+      //const cookie = await sessionCookie.serialize({ userId: user.id });
+
+      // Redirigimos al usuario, configurando la cookie (ERROR SI MANDO user, ademas de headers)
+      return redirect('/', {
         headers: {
-          'Set-Cookie': serializedCookie,
+          'Set-Cookie': await commitSession(session), // Configuramos el encabezado Set-Cookie con la session y almacenamos el ID en session storage
         },
-      };
+      });
     },
-    // Si hay errores de validación, los manejamos aquí
     (errors) => ({
-      errors, // Devolvemos los errores específicos
-      email: formData.get('email'), // Mantenemos el email ingresado en el caso de error
-      status: 400,
+      errors, // Devolvemos los errores si la validación falla
+      email: formData.get('email'), // Mantenemos el email ingresado
+      status: 400, // Indicamos un error en la solicitud del cliente
     }),
   );
 };
