@@ -68,7 +68,7 @@ export const action: ActionFunction = async ({ request }) => {
       //const cookie = await sessionCookie.serialize({ userId: user.id });
 
       // Redirigimos al usuario, configurando la cookie (ERROR SI MANDO user, ademas de headers)
-      return redirect('/', {
+      return redirect('/app', {
         headers: {
           'Set-Cookie': await commitSession(session), // Configuramos el encabezado Set-Cookie con la session y almacenamos el ID en session storage
         },
