@@ -23,6 +23,7 @@ import { createShelfItem, deleteShelfItem } from '~/models/pantry-item.server';
 //----------LOADER----------
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  //En los loader se puede poner como variable ademas de request, params, que te permite sacar los parametros sacados e inmcluso acceder a los de una ruta hija (IMP)
   const url = new URL(request.url);
   const q = url.searchParams.get('q'); //q de la query del parametro de busqueda
   //Conexion con BD importada de db.server.ts
