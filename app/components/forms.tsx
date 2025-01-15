@@ -1,4 +1,8 @@
-import type { ButtonHTMLAttributes, HTMLAttributes } from 'react';
+import type {
+  ButtonHTMLAttributes,
+  HTMLAttributes,
+  InputHTMLAttributes,
+} from 'react';
 import { classNames } from '~/utils/misc';
 
 //Se crea una interfaz para no tener que añadir uno a uno todos los atributos que usas
@@ -53,4 +57,20 @@ export function ErrorMessage({ className, ...props }: ErrorMessageProps) {
   return props.children ? (
     <p {...props} className={classNames('text-red-600 text-xs', className)}></p>
   ) : null;
+}
+
+//Para generalizar los input
+interface PrimaryInputProps extends InputHTMLAttributes<HTMLInputElement> {}
+
+export function PrimaryInput({ className, ...props }: PrimaryInputProps) {
+  return (
+    <input
+      {...props}
+      className={classNames(
+        'w-full outline-none border-2 border-gray-200',
+        'focus:border-primary rounded-md p-2',
+        className,
+      )}
+    />
+  );
 }

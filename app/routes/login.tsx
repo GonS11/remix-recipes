@@ -1,11 +1,13 @@
 import { ActionFunction, LoaderFunction, redirect } from '@remix-run/node';
 import { useActionData } from '@remix-run/react';
 import { z } from 'zod';
-import { ErrorMessage, PrimaryButton } from '~/components/forms';
+import { ErrorMessage, PrimaryButton, PrimaryInput } from '~/components/forms';
+import { generateMagicLink } from '~/magic-links.server';
 import getUser from '~/models/user.server';
 import { commitSession, getSession } from '~/sessions';
 import { classNames } from '~/utils/misc';
 import validateForm from '~/utils/validation';
+import { v4 as uuid } from 'uuid';
 
 // Definimos un tipo para los datos de la acción (ESTO SOLUCIONA EL PROBLEMA DE ERRORS)
 interface ActionData {
@@ -33,7 +35,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   console.log('Session user ID:', session.get('userId')); //Atributos flsh, get, has, set, unset... (Pero ninguna le pasa la info a la session storage a menos que se use commitSession, no getSession)
 
   // Si no hay cookies, retornamos `null` (o podríamos redirigir si es necesario)
-  return null;
+  return new Response(null);
 };
 
 // Acción para manejar el login
@@ -50,35 +52,22 @@ export const action: ActionFunction = async ({ request }) => {
     formData,
     loginSchema, // Validamos el formulario usando un esquema definido con Zod
     async ({ email }) => {
-      // Buscamos al usuario en la base de datos utilizando su email
-      const user = await getUser(email);
+      //Usamos magic link: email + nonce (string aleatorio dificil/uuid de la BD [Universal Unique ID])
+      const nonce = uuid();
+      session.set('nonce', nonce); //Mejor que set, ya que se borra automaticamente luego. Pero da error flash
 
-      // Si no existe el usuario, devolvemos un error con el estado HTTP 401 (No autorizado)
-      if (user === null) {
-        return {
-          errors: { email: 'User with this email does not exist' },
-          status: 401,
-        };
-      }
+      const link = generateMagicLink(email, nonce);
+      console.log(link);
 
-      //Cuando sabemos que no es null guardamos ID
-      session.set('userId', user.id);
-
-      // Serializamos el ID del usuario para almacenarlo en una cookie segura
-      //const cookie = await sessionCookie.serialize({ userId: user.id });
-
-      // Redirigimos al usuario, configurando la cookie (ERROR SI MANDO user, ademas de headers)
-      return redirect('/app', {
-        headers: {
-          'Set-Cookie': await commitSession(session), // Configuramos el encabezado Set-Cookie con la session y almacenamos el ID en session storage
-        },
-      });
+      return new Response('Login successful', {
+        headers: { 'Set-Cookie': await commitSession(session) },
+      }); //Confirmacion
     },
-    (errors) => ({
-      errors, // Devolvemos los errores si la validación falla
-      email: formData.get('email'), // Mantenemos el email ingresado
-      status: 400, // Indicamos un error en la solicitud del cliente
-    }),
+    (errors) =>
+      new Response(JSON.stringify({ errors, email: formData.get('email') }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      }),
   );
 };
 
@@ -86,20 +75,16 @@ function Login() {
   const actionData = useActionData<ActionData>(); // Aplicamos el tipo ActionData aquí
 
   return (
-    <div className="text-center mt-3">
+    <div className="text-center mt-36">
       <h1 className="text-3xl mb-8">Remix Recipes</h1>
       <form method="post" className="mx-auto md:w-1/3">
         <div className="text-left pb-4">
-          <input
+          <PrimaryInput
             type="email"
             name="email"
             placeholder="Email"
             autoComplete="off"
             defaultValue={actionData?.email}
-            className={classNames(
-              'w-full outline-none border-2 border-grey-200',
-              'focus:border-primary rounded-md p-2',
-            )}
           />
           <ErrorMessage>{actionData?.errors?.email}</ErrorMessage>
         </div>
