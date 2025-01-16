@@ -1,14 +1,17 @@
 import {
   Form,
+  isRouteErrorResponse,
   useFetcher,
   useLoaderData,
   useNavigation,
+  useRouteError,
   useSearchParams,
 } from '@remix-run/react';
 import {
   createShelf,
   deleteShelf,
   getAllShelves,
+  getShelf,
   saveShelfName,
 } from '~/models/pantry-shelf.server';
 import { classNames, useIsHydrated, useServerLayoutEffect } from '~/utils/misc';
@@ -18,18 +21,24 @@ import { DeleteButton, ErrorMessage, PrimaryButton } from '~/components/forms';
 import { z } from 'zod';
 import validateForm from '~/utils/validation';
 import React from 'react';
-import { createShelfItem, deleteShelfItem } from '~/models/pantry-item.server';
+import {
+  createShelfItem,
+  deleteShelfItem,
+  getShelfItem,
+} from '~/models/pantry-item.server';
+import { requireLoggedInUser } from '~/utils/auth.server';
 
 //----------LOADER----------
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  const user = await requireLoggedInUser(request); //COMPRUEBA SI ESTA LOGUEADO Y DEVUELVE USER para el userId
   //En los loader se puede poner como variable ademas de request, params, que te permite sacar los parametros sacados e inmcluso acceder a los de una ruta hija (IMP)
   const url = new URL(request.url);
   const q = url.searchParams.get('q'); //q de la query del parametro de busqueda
   //Conexion con BD importada de db.server.ts
   //Recuperar todo de pantryshelf. findMany() devuelve una promesa (Ponerle await Y HACER ASYNC LA FUNCTION LOADER)
   //Al llamar a un modelo, el loader no sabe que lo obtenemos de prisma
-  const shelves = await getAllShelves(q);
+  const shelves = await getAllShelves(user.id, q);
   //No se devuelve ni con json() ni con New Response JSON.stringify por incompatibilidad de tipados. Remix lo trnasforma a json automatico
   return { shelves };
 }
@@ -59,18 +68,41 @@ const deleteShelfItemSchema = z.object({
 export const action: ActionFunction = async ({
   request,
 }: LoaderFunctionArgs) => {
+  const user = await requireLoggedInUser(request); //COMPRUEBA SI ESTA LOGUEADO
+
   //Aqui diferenciar si los botones de Form crean, eliminan shelfs... Pq sino siempre crea (Diferenciarlos por el value dado y en name _action)
   const formData = await request.formData();
 
   switch (formData.get('_action')) {
+    //Filtrar los casos de create shelf, item para que solo lo haga un usuario determinado y se asignen a el solo
     case 'createShelf': {
-      return createShelf();
+      //Control con user.id
+      return createShelf(user.id);
     }
     case 'deleteShelf': {
       return validateForm(
         formData,
         deleteShelfSchema,
-        (data) => deleteShelf(data.shelfId),
+        async (data) => {
+          //1º Comprobar el rresponsable de esa tabla
+          const shelf = await getShelf(data.shelfId);
+
+          //2º Mensaje (asegurar que shelf existe && accion de comprobacion)
+          if (shelf !== null && shelf?.userId !== user.id) {
+            throw new Response(
+              JSON.stringify(
+                'This shelf is not yours, so you cannot delete it',
+              ),
+              {
+                status: 401, //Anathorize
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          //3º Realizar la accion
+          return deleteShelf(data.shelfId);
+        },
         (errors) => ({ errors, status: 400 }),
       );
     }
@@ -78,7 +110,26 @@ export const action: ActionFunction = async ({
       return validateForm(
         formData,
         saveShelfNameSchema,
-        (data) => saveShelfName(data.shelfId, data.shelfName),
+        async (data) => {
+          //1º Comprobar el rresponsable de esa tabla
+          const shelf = await getShelf(data.shelfId);
+
+          //2º Mensaje (asegurar que shelf existe && accion de comprobacion)
+          if (shelf !== null && shelf?.userId !== user.id) {
+            throw new Response(
+              JSON.stringify(
+                'This shelf is not yours, so you cannot change its name',
+              ),
+              {
+                status: 401, //Anathorize
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          //3º Realizar la accion
+          return saveShelfName(data.shelfId, data.shelfName);
+        },
         (errors) => ({ errors, status: 400 }),
       );
     }
@@ -86,7 +137,8 @@ export const action: ActionFunction = async ({
       return validateForm(
         formData,
         createShelfItemSchema,
-        (data) => createShelfItem(data.shelfId, data.itemName),
+        //Control con user.id
+        (data) => createShelfItem(user.id, data.shelfId, data.itemName),
         (errors) => ({ errors, status: 400 }),
       );
     }
@@ -94,7 +146,24 @@ export const action: ActionFunction = async ({
       return validateForm(
         formData,
         deleteShelfItemSchema,
-        (data) => deleteShelfItem(data.itemId),
+        async (data) => {
+          //1º Recuperamos el item por su id
+          const item = await getShelfItem(data.itemId);
+
+          //2º Control de usuario y propietario de item
+          if (item !== null && item.id !== user.id) {
+            throw new Response(
+              JSON.stringify('This item is not yours, so you cannot delete it'),
+              {
+                status: 401, //Anathorize
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
+          }
+
+          //3º Accion
+          return deleteShelfItem(data.itemId);
+        },
         (errors) => ({ errors, status: 400 }),
       );
     }
@@ -467,4 +536,26 @@ function useOptimisticItems(
 function createItemId() {
   //Crea un id aleatorio para optimisticUI Item
   return `${Math.round(Math.random() * 1_000_000)}`;
+}
+
+//Se crea este control de errores pq el de root es muy generico y que te viaje a una pagina completamente diferente es una mierda
+export function ErrorBoundary() {
+  const error = useRouteError();
+
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div className="bg-red-600 text-white rounded-md p-4">
+        <h1 className="mb-2">
+          {error.status} - {error.statusText}
+        </h1>
+        <p>{error.data.message}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-red-600 text-white rounded-md p-4">
+      <h1 className="mb-2">An unexpected error occurred</h1>
+    </div>
+  );
 }

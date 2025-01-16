@@ -3,10 +3,12 @@ import db from '~/db.server'; //IMPORTADO (Soluciona multiples instancias)
 import { handleDelete } from './utils';
 
 //Crear modelos/querys
-export function getAllShelves(query: string | null) {
+//El de getAll lo haremos solo para determinado id de usuario, NO todos tienen acceso a todo
+export function getAllShelves(userId: string, query: string | null) {
   //Recuperar todo de pantryshelf. findMany() devuelve una promesa
   return db.pantryShelf.findMany({
     where: {
+      userId, //Necesitamos IDuser
       name: {
         //NOMBRE
         contains: query ?? '', // Filtro parcial por nombre
@@ -26,9 +28,11 @@ export function getAllShelves(query: string | null) {
   });
 }
 
-export function createShelf() {
+//Filtrar para asignar a un user determinado
+export function createShelf(userId: string) {
   return db.pantryShelf.create({
     data: {
+      userId,
       name: 'New Shelf',
     },
   });
@@ -72,4 +76,9 @@ export function saveShelfName(shelfId: string, shelfName: string) {
       name: shelfName,
     },
   });
+}
+
+//Funcion para comprobar el encargado de esa tabla
+export function getShelf(id: string) {
+  return db.pantryShelf.findUnique({ where: { id } });
 }

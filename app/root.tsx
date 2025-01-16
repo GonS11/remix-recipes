@@ -1,4 +1,5 @@
 import {
+  isRouteErrorResponse,
   Link,
   Links,
   Meta,
@@ -6,11 +7,16 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
   useNavigation,
   useResolvedPath,
   useRouteError,
 } from '@remix-run/react';
-import type { LinksFunction, MetaFunction } from '@remix-run/node';
+import type {
+  LinksFunction,
+  LoaderFunction,
+  MetaFunction,
+} from '@remix-run/node';
 
 import './tailwind.css';
 import {
@@ -18,10 +24,12 @@ import {
   DiscoverIcon,
   HomeIcon,
   LoginIcon,
+  LogoutIcon,
   SettingIcon,
 } from './components/icons';
 import React from 'react';
 import classNames from 'classnames';
+import { getCurrentUSer } from './utils/auth.server';
 
 export const links: LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -66,6 +74,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+//Se crea este loader para mostrar app solo si esta logueado
+export const loader: LoaderFunction = async ({ request }) => {
+  const user = await getCurrentUSer(request);
+
+  //Solo se devuelv eun boolean y no todo el usuario asi no descarga todo (Se filtra con este boolean en el servidor)
+  return { isLoggedIn: user !== null };
+};
+
 //La ffc App solo devuelve Outlet, solo renderiza las nest-routes indicadas. Como pertenece a root, se renderiza siempre y siempre esta, por lo que si añadimos rutas de navegacion todos lo tendran y su contenido se renderizara en Outlet
 export default function App() {
   //useMatches: Agrupa todas las rutas que importan de la pagina y dice informacion sobre cada una (data/resultado del loader,id...). Te permite extraer esa data de cualquier ruta hija o padre en cualquier sitio y siempre tienes acceso a esa informacion
@@ -73,6 +89,9 @@ export default function App() {
   React.useEffect(() => {
     console.log(matches);
   }, [matches]); */
+
+  const data = useLoaderData<typeof loader>(); //PONER EL TIPO
+
   return (
     <>
       <nav
@@ -88,17 +107,26 @@ export default function App() {
           <AppNavLink to="discover">
             <DiscoverIcon />
           </AppNavLink>
-          <AppNavLink to="app/pantry">
-            <BookIcon />
-          </AppNavLink>
+          {data.isLoggedIn ? (
+            <AppNavLink to="app/pantry">
+              <BookIcon />
+            </AppNavLink>
+          ) : null}
+
           <AppNavLink to="settings">
             <SettingIcon />
           </AppNavLink>
         </ul>
         <ul>
-          <AppNavLink to="/login">
-            <LoginIcon />
-          </AppNavLink>
+          {data.isLoggedIn ? (
+            <AppNavLink to="/logout">
+              <LogoutIcon />
+            </AppNavLink>
+          ) : (
+            <AppNavLink to="/login">
+              <LoginIcon />
+            </AppNavLink>
+          )}
         </ul>
       </nav>
       <div className="p-4 w-full md:w-[calc(100%-4rem)]">
@@ -168,11 +196,27 @@ export function ErrorBoundary() {
       </head>
       <body>
         <div className="p-4">
-          <h1 className="text-2xl pb-3">Whoops!</h1>
-          <p>You are seeing this page because an unexpected error occurred.</p>
-          {error instanceof Error ? (
-            <p className="my-4 font-bold">{error.message}</p>
-          ) : null}
+          {isRouteErrorResponse(error) ? (
+            <>
+              <h1 className="text-2xl pb-3">
+                {/**400 - Not Found */}
+                {error.status}-{error.statusText}
+              </h1>
+              <p>You are seeing this page because an error occurred.</p>
+              {/**Los error.data.message son los de las funciones de validateForm */}
+              <p className="my-4 font-bold">{error.data.message}</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl pb-3">Whoops!</h1>
+              <p>
+                You are seeing this page because an unexpected error occurred.
+              </p>
+              {error instanceof Error ? (
+                <p className="my-4 font-bold">{error.message}</p>
+              ) : null}
+            </>
+          )}
           <Link to="/" className="text-primary">
             Take me home
           </Link>

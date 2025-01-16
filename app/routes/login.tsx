@@ -8,6 +8,7 @@ import { commitSession, getSession } from '~/sessions';
 import { classNames } from '~/utils/misc';
 import validateForm from '~/utils/validation';
 import { v4 as uuid } from 'uuid';
+import { requireLoggedOutUser } from '~/utils/auth.server';
 
 // Definimos un tipo para los datos de la acción (ESTO SOLUCIONA EL PROBLEMA DE ERRORS)
 interface ActionData {
@@ -24,23 +25,26 @@ const loginSchema = z.object({
 //Para saber quién ha hecho login (loader function)
 // Esta función verifica si hay cookies en el request y las parsea.
 export const loader: LoaderFunction = async ({ request }) => {
+  await requireLoggedOutUser(request); //Si se mete a login un usuario logueado ya te redirige a app (NO PUEDE VER LOGIN)
+  /*  TODO ESTO YA NO ES NECESARIO, pondremos el control de loguin o no
   // Rescatamos el header de cookies del request.
   const cookieHeader = request.headers.get('cookie');
-  console.log('Request Cookie Header:', cookieHeader); // Log para depurar el header completo de cookies
+  //console.log('Request Cookie Header:', cookieHeader); // Log para depurar el header completo de cookies
 
   // Parseamos la cookie específica `remix-recipes__userId`
   const session = await getSession(cookieHeader);
   //Antes asi: const cookieValue = await sessionCookie.parse(cookieHeader);
   console.log('Session data:', session.data); // Log para depurar el valor de session data
-  console.log('Session user ID:', session.get('userId')); //Atributos flsh, get, has, set, unset... (Pero ninguna le pasa la info a la session storage a menos que se use commitSession, no getSession)
+  //console.log('Session user ID:', session.get('userId')); //Atributos flsh, get, has, set, unset... (Pero ninguna le pasa la info a la session storage a menos que se use commitSession, no getSession)
 
-  // Si no hay cookies, retornamos `null` (o podríamos redirigir si es necesario)
+  // Si no hay cookies, retornamos `null` (o podríamos redirigir si es necesario) */
   return new Response(null);
 };
 
 // Acción para manejar el login
 // Esta función recibe los datos del formulario, valida el email y configura una cookie con el ID del usuario.
 export const action: ActionFunction = async ({ request }) => {
+  await requireLoggedOutUser(request); //Se llama tambien para que si esta logueado no genere un magiclink
   //Usar session para almacenar userID
   const cookieHeader = request.headers.get('cookie');
   const session = await getSession(cookieHeader);
@@ -59,7 +63,7 @@ export const action: ActionFunction = async ({ request }) => {
       const link = generateMagicLink(email, nonce);
       console.log(link);
 
-      return new Response('Login successful', {
+      return redirect('/app', {
         headers: { 'Set-Cookie': await commitSession(session) },
       }); //Confirmacion
     },
