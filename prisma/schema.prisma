@@ -27,6 +27,7 @@ model User{
 //Relacion 1 a muchos como shelf con items
   pantryShelves PantryShelf[]
   pantryItems PantryItem[]
+  recipes  Recipe[]
 }
 
 //Para crear tablas creamos modelos. SIEMPRE CADA MODELO NECESITA @id (@=atributo, id=PK). ciud() genera id unico, NO PUEDE SER ESTATICO
@@ -56,3 +57,33 @@ model PantryItem{
 
   shelf PantryShelf @relation(fields: [shelfId],references: [id],onDelete: Cascade)
 }
+
+//Si se hacen modificaciones en el schema.prisma model, en la consola poner (Parar todo):
+// - npx prisma db push
+model Recipe{
+  id  String @id @default(cuid())
+  name String
+  instructions String
+  totalTime String
+  imageUrl  String
+  userId  String
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  user User @relation(fields: [userId],references: [id])
+  ingredients  Ingredient[]
+}
+
+model Ingredient{
+  id  String @id @default(cuid())
+  name  String
+  amount  String
+  recipeId  String
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  recipe  Recipe  @relation(fields: [recipeId],references: [id],onDelete: Cascade)
+}
+

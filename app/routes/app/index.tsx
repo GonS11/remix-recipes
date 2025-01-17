@@ -7,6 +7,6 @@ export const loader: LoaderFunction = () => {
     headers: { Location: '/app/pantry' },
   }); */
 
-  //Simplificado
-  return redirect('/app/pantry');
+  //Simplificado (Antes iba a pantry con /app/pantry)
+  return redirect('/app/recipes');
 };
