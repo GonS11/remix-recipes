@@ -1,11 +1,8 @@
 import {
-  Form,
   isRouteErrorResponse,
   useFetcher,
   useLoaderData,
-  useNavigation,
   useRouteError,
-  useSearchParams,
 } from '@remix-run/react';
 import {
   createShelf,
@@ -16,8 +13,13 @@ import {
 } from '~/models/pantry-shelf.server';
 import { classNames, useIsHydrated, useServerLayoutEffect } from '~/utils/misc';
 import { ActionFunction, LoaderFunctionArgs } from '@remix-run/node';
-import { PlusIcon, SaveIcon, SearchIcon, TrashIcon } from '~/components/icons';
-import { DeleteButton, ErrorMessage, PrimaryButton } from '~/components/forms';
+import { PlusIcon, SaveIcon, TrashIcon } from '~/components/icons';
+import {
+  DeleteButton,
+  ErrorMessage,
+  PrimaryButton,
+  SearchBar,
+} from '~/components/forms';
 import { z } from 'zod';
 import validateForm from '~/utils/validation';
 import React from 'react';
@@ -177,38 +179,17 @@ export const action: ActionFunction = async ({
 
 function Pantry() {
   const data = useLoaderData<typeof loader>();
-  const [searchParams] = useSearchParams();
 
   const createShelfFetcher = useFetcher();
 
-  //Para el Form
-  const navigation = useNavigation();
-  const isSearching = navigation.formData?.has('q'); //FormData es un objeto, necesitamos metodo has() con la clave del name del form
   //YA NO, que no navegamos al crear const isCreatingShelf = navigation.formData?.get('_action') === 'createShelf';
   const isCreatingShelf =
     createShelfFetcher.formData?.get('_action') === 'createShelf';
 
   return (
     <div>
-      <Form
-        className={classNames(
-          'flex border-2 border-gray-300 rounded-md',
-          'focus-within:border-primary md:w-80',
-          isSearching ? 'animate-pulse' : '',
-        )}
-      >
-        <button className="px-2 mr-1">
-          <SearchIcon />
-        </button>
-        <input
-          defaultValue={searchParams.get('q') ?? ''}
-          type="text"
-          name="q"
-          autoComplete="off"
-          placeholder="Search Shelves..."
-          className="w-full py-3 px-2 outline-none"
-        />
-      </Form>
+      {/**Componente en forms.tsx */}
+      <SearchBar placeholder="Search Shelves..." className="md:w-80" />
       {/**reloadDocument desactiva la recarga parcial de remix y recarga la pagina por completo. Este Form seria como un form normal pero con js */}
       <createShelfFetcher.Form method="post">
         <PrimaryButton
