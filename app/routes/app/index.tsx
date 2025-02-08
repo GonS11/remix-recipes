@@ -9,4 +9,13 @@ export const loader: LoaderFunction = () => {
 
   //Simplificado (Antes iba a pantry con /app/pantry)
   return redirect('/app/recipes');
+
+  /**Otra forma con codigo de envio
+   * return new Response(null, {
+    status: 302,
+    headers: {
+      Location: '/app/pantry',
+    },
+  });
+   */
 };
