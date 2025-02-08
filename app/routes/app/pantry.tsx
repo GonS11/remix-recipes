@@ -179,12 +179,18 @@ export const action: ActionFunction = async ({
 
 function Pantry() {
   const data = useLoaderData<typeof loader>();
-
   const createShelfFetcher = useFetcher();
+  const containerRef = React.useRef<HTMLUListElement>(null);
 
   //YA NO, que no navegamos al crear const isCreatingShelf = navigation.formData?.get('_action') === 'createShelf';
   const isCreatingShelf =
     createShelfFetcher.formData?.get('_action') === 'createShelf';
+
+  React.useEffect(() => {
+    if (!isCreatingShelf && containerRef.current) {
+      containerRef.current.scrollLeft = 0;
+    }
+  }, [isCreatingShelf]);
 
   return (
     <div>
@@ -203,6 +209,8 @@ function Pantry() {
           </span>
         </PrimaryButton>
       </createShelfFetcher.Form>
+
+      {/**Listado de cada shelf */}
       <ul
         className={classNames(
           'flex gap-8 overflow-x-auto mt-4 pb-6',
