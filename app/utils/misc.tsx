@@ -45,3 +45,26 @@ export function isRunningOnServer() {
 export const useServerLayoutEffect = isRunningOnServer()
   ? useEffect
   : useLayoutEffect;
+
+export function useDebounceFunction<T extends Array<unknown>>(
+  fn: (...args: T) => unknown, // La función que queremos "debouncear" (retrasar su ejecución).
+  time: number, // El tiempo en milisegundos que queremos esperar antes de ejecutar la función.
+) {
+  // `timeoutId` es una referencia mutable que almacena el ID del timeout actual.
+  // Usamos `useRef` para mantener este valor entre renders sin causar un nuevo renderizado.
+  const timeoutId = React.useRef<number>();
+
+  // `debouncedFn` es la función que retrasa la ejecución de `fn`.
+  const debouncedFn = (...args: T) => {
+    // Limpiamos el timeout anterior si existe.
+    // Esto evita que la función se ejecute si se llama nuevamente antes de que termine el tiempo de espera.
+    window.clearTimeout(timeoutId.current);
+
+    // Establecemos un nuevo timeout que ejecutará `fn` después de `time` milisegundos.
+    // `window.setTimeout` devuelve un ID numérico que almacenamos en `timeoutId.current`.
+    timeoutId.current = window.setTimeout(() => fn(...args), time);
+  };
+
+  // Retornamos la función "debounceada" para que pueda ser utilizada.
+  return debouncedFn;
+}
