@@ -2,6 +2,7 @@ import { NavLink as RemixNavLink, Outlet } from '@remix-run/react';
 import { classNames } from '~/utils/misc';
 
 export default function App() {
+  //Indice de app con opciond e Pantry y Recipes
   return (
     <div className="flex flex-col h-full">
       <h1 className="text-2xl font-bold my-4">App</h1>
@@ -9,6 +10,7 @@ export default function App() {
         <RemixNavLink to="recipes">Recipes</RemixNavLink>
         <NavLink to="pantry">Pantry</NavLink>
       </nav>
+      {/**Para mostrar contenido */}
       <div className="py-4 overflow-y-auto">
         <Outlet />
       </div>
@@ -20,6 +22,7 @@ type NavLinkProps = {
   to: string;
   children: React.ReactNode;
 };
+
 function NavLink({ to, children }: NavLinkProps) {
   return (
     <RemixNavLink

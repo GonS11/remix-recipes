@@ -12,7 +12,6 @@ export function getAllShelves(userId: string, query: string | null) {
       name: {
         //NOMBRE
         contains: query ?? '', // Filtro parcial por nombre
-        mode: 'insensitive', // Ignorar mayúsculas/minúsculas
       },
     },
     include: {

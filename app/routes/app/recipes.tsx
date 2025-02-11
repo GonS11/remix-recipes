@@ -25,13 +25,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const q = url.searchParams.get('q');
 
-  //Las ordenamos para que las nuevas salen primero (orderBy)
+  //Las ordenamos para que las nuevas recetas salgan primero (orderBy) y salgan por busqueda
   const recipes = await db.recipe.findMany({
     where: {
       userId: user.id,
       name: {
         contains: q ?? '',
-        mode: 'insensitive', //En sqlite no poner mode
       },
     },
     select: { name: true, totalTime: true, imageUrl: true, id: true },

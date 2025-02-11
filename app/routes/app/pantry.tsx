@@ -17,6 +17,7 @@ import { PlusIcon, SaveIcon, TrashIcon } from '~/components/icons';
 import {
   DeleteButton,
   ErrorMessage,
+  Input,
   PrimaryButton,
   SearchBar,
 } from '~/components/forms';
@@ -291,20 +292,15 @@ function Shelf({ shelf }: ShelfProps) {
       {/**Se usa optimistic UI, definir mensaje de error */}
       <saveShelfNameFetcher.Form method="post" className="flex">
         <div className="w-full mb-2 peer">
-          <input
+          <Input
             type="text"
             required
             defaultValue={shelf.name}
             name="shelfName"
             placeholder="Shelf Name"
             autoComplete="off"
-            className={classNames(
-              'text-2xl font-extrabold mb-2 w-full outline-none',
-              'border-b-2 border-b-background focus:border-b-primary',
-              saveShelfNameFetcher.data?.errors?.shelfName
-                ? 'border-b-red-600'
-                : '',
-            )}
+            className="text-2xl font-extrabold "
+            error={!!saveShelfNameFetcher.data?.errors?.shelfName}
             onChange={(event) =>
               //Validar si no esta vacio
               event.target.value !== '' &&
