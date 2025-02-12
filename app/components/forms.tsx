@@ -110,6 +110,12 @@ export function SearchBar({ placeholder, className }: SearchBarProps) {
         placeholder={placeholder}
         className="w-full py-3 px-2 outline-none rounded-md"
       />
+      {/**Aqui se meten los parametros en hidden inputs, menos cuando no hay q y no se busca directamente */}
+      {Array.from(searchParams.entries()).map(([name, value], index) =>
+        name !== 'q' ? (
+          <input key={index} name={name} value={value} type="hidden" />
+        ) : null,
+      )}
     </Form>
   );
 }

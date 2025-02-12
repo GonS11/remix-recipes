@@ -1,6 +1,7 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import {
   Form,
+  Link,
   NavLink,
   Outlet,
   redirect,
@@ -8,9 +9,10 @@ import {
   useLoaderData,
   useLocation,
   useNavigation,
+  useSearchParams,
 } from '@remix-run/react';
 import { PrimaryButton, SearchBar } from '~/components/forms';
-import { PlusIcon } from '~/components/icons';
+import { CalendarIcon, PlusIcon } from '~/components/icons';
 import {
   RecipeCard,
   RecipeDetailWrapper,
@@ -19,12 +21,18 @@ import {
 } from '~/components/recipes';
 import db from '~/db.server';
 import { requireLoggedInUser } from '~/utils/auth.server';
+import { classNames, useBuildSearchParams } from '~/utils/misc';
 
+//==============================LOADER===========================================================
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireLoggedInUser(request);
   //Para que funcione la busqueda, necesitamos traquear la URL que tiene el parametro de busqueda q
   const url = new URL(request.url);
   const q = url.searchParams.get('q');
+
+  //Para link + CalendarIcon
+  //Si filter es === 'mealPlanOnly', queremos filtrar las recetas que tienen mealPlanMultiplier como NO NULL (Añadir condicional en db fx en where). {not:null} o nada {}
+  const filter = url.searchParams.get('filter');
 
   //Las ordenamos para que las nuevas recetas salgan primero (orderBy) y salgan por busqueda
   const recipes = await db.recipe.findMany({
@@ -33,8 +41,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       name: {
         contains: q ?? '',
       },
+      mealPlanMultiplier: filter === 'mealPlanOnly' ? { not: null } : {},
     },
-    select: { name: true, totalTime: true, imageUrl: true, id: true },
+    select: {
+      name: true,
+      totalTime: true,
+      imageUrl: true,
+      id: true,
+      mealPlanMultiplier: true,
+    },
     orderBy: {
       createAt: 'desc',
     },
@@ -43,6 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { recipes };
 }
 
+//==============================ACTION===========================================================
 //Creamos un action para controlar la creacion del form de create new recipe
 export async function action({ request }: ActionFunctionArgs) {
   //Solo crea recetas que le pertenecen
@@ -64,6 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
   return redirect(url.toString());
 }
 
+//==============================COMPONENTE PRINCIPAL====================================================
 export default function Recipes() {
   const data = useLoaderData<typeof loader>();
   //Usamos location para que se mantenga el valor de busqueda aunque clickes otra receta, asi no se recargan todos. Este hook de remix te da la localizacion actual o la URL, es un objeto {pathname, search}
@@ -75,12 +92,35 @@ export default function Recipes() {
   //useFetchers devuelve todos los fetcher que estan activos
   const fetchers = useFetchers();
 
+  //-----------Filtrar por mealPlan (filter) + SearchBar (q)--------------
+  const [searchParams] = useSearchParams();
+  const mealPlanOnly = searchParams.get('filter') === 'mealPlanOnly';
+  const buildSearchParams = useBuildSearchParams(); //Nuestro hook para filter + busqueda/SearchBar (q) en la URL a la vez
+
+  //Ahora tenemos que hacerlo para que coexistan al reves, al buscar se actualiza, queremos que coexista con filter -> Añadir hidden input en SeachBar
+
   return (
     <RecipePageWrapper>
-      {/**Lado izquierdo con las recetas */}
+      {/**=========Listado RecipeCards===========*/}
       <RecipeListWrapper>
-        <SearchBar placeholder="Search Recipes..." />
-        {/**Creamos boton para crear recetas */}
+        <div className="flex gap-4">
+          {/**IMP flex-grow */}
+          <SearchBar placeholder="Search Recipes..." className="flex-grow" />
+          {/**Como no paso info puedo usar un Link y no un Form, al poner como to ?filter, se recarga y lo añade a la URL. Queremos que se pueda seguir buscar aun, creamos un hook en misc */}
+          {/**Se redirige y estila segun si de ha clickado o no */}
+          <Link
+            to={buildSearchParams('filter', mealPlanOnly ? '' : 'mealPlanOnly')}
+            className={classNames(
+              //Centrado vertical de Icon + Border
+              'flex flex-col justify-center border-2 border-primary rounded-md px-2',
+              mealPlanOnly ? 'text-white bg-primary' : 'text-primary',
+            )}
+          >
+            <CalendarIcon />
+          </Link>
+        </div>
+
+        {/**-----------Boton Crear Recetas----------*/}
         <Form method="post" className="mt-4">
           <PrimaryButton className="w-full">
             <div className="flex w-full justify-center">
@@ -89,7 +129,8 @@ export default function Recipes() {
             </div>
           </PrimaryButton>
         </Form>
-        {/**Mostramos recetas */}
+
+        {/**--------Listado de RecipeCards---------- */}
         <ul>
           {data?.recipes.map((recipe) => {
             // Para saber si la receta está en proceso de cargarse, comprobamos si la URL de navegación actual termina con el ID de la receta.
@@ -120,30 +161,20 @@ export default function Recipes() {
                  * Esto permite mostrar los detalles de cada receta en una página específica basada en su ID.
                  */}
                 <NavLink
-                  // Creamos el enlace con un objeto que define el pathname (ID de la receta) y mantenemos los parámetros de búsqueda actuales.
-                  to={{ pathname: recipe.id, search: location.search }}
-                  prefetch="intent" // Este atributo activa el prefetching de datos.
-                  /**
-                   * 🎯 Explicación de `prefetch="intent"`:
-                   * - `prefetch="intent"` es una característica de Remix que optimiza el rendimiento.
-                   * - Cuando el usuario muestra intención de interactuar con el enlace (por ejemplo, al pasar el ratón por encima o enfocar el enlace), Remix precarga los datos relacionados con la ruta del enlace.
-                   * - Este comportamiento mejora la experiencia del usuario porque acelera el tiempo de carga cuando hacen clic en el enlace.
-                   * - Este prefetching está integrado con los navegadores y evita que se carguen datos innecesarios si no hay intención del usuario.
-                   */
+                  to={{ pathname: recipe.id, search: location.search }} // Ruta dinámica con búsqueda actual
+                  prefetch="intent" // Precarga datos cuando el usuario interactúa con el enlace (hover/focus)
                 >
                   {({ isActive }) => (
-                    /**
-                     * Utilizamos una función de render para personalizar el contenido basado en si el enlace está activo o no.
-                     * - `isActive` indica si la ruta actual coincide con la ruta del enlace.
-                     */
+                    /** Renderiza la tarjeta de la receta, mostrando datos optimistas si están disponibles. */
                     <RecipeCard
-                      name={optimisticData.get('name') ?? recipe.name} // Nombre de la receta
+                      name={optimisticData.get('name') ?? recipe.name} // Nombre optimista o real
                       totalTime={
                         optimisticData.get('totalTime') ?? recipe.totalTime
-                      } // Tiempo total de preparación
-                      imageUrl={recipe.imageUrl} // URL de la imagen de la receta
-                      isActive={isActive} // Indica si esta tarjeta está activa
-                      isLoading={isLoading} // Indica si la receta está en proceso de cargarse
+                      } // Tiempo optimista o real
+                      mealPlanMultiplier={recipe.mealPlanMultiplier} // Multiplicador del plan de comidas
+                      imageUrl={recipe.imageUrl} // URL de la imagen
+                      isActive={isActive} // Indica si la tarjeta está activa (ruta actual coincide)
+                      isLoading={isLoading} // Indica si la receta está cargando
                     />
                   )}
                 </NavLink>
@@ -152,7 +183,8 @@ export default function Recipes() {
           })}
         </ul>
       </RecipeListWrapper>
-      {/**Lado derecho mostrar ruta con los detalles de las recetas */}
+
+      {/**===============Lado derecho con ruta hija de ingredientes====================*/}
       <RecipeDetailWrapper>
         <Outlet />
       </RecipeDetailWrapper>

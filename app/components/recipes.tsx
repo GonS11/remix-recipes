@@ -74,6 +74,7 @@ function useDelayedBool(value: boolean | undefined, delay: number) {
 type RecipeCardProps = {
   name: string;
   totalTime: string;
+  mealPlanMultiplier: number | null;
   imageUrl?: string;
   isActive?: boolean;
   isLoading?: boolean;
@@ -82,6 +83,7 @@ type RecipeCardProps = {
 export function RecipeCard({
   name,
   totalTime,
+  mealPlanMultiplier,
   imageUrl,
   isActive,
   isLoading,
@@ -117,6 +119,9 @@ export function RecipeCard({
         {/* Nombre de la receta con indicador de carga si es necesario */}
         <h3 className="font-semibold mb-1 text-left">
           {name}
+          {mealPlanMultiplier !== null ? (
+            <>&nbsp;(x{mealPlanMultiplier})</>
+          ) : null}
           {delayedLoading ? '...' : ''}{' '}
           {/* Añade puntos suspensivos al cargar */}
         </h3>

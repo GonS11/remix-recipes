@@ -393,7 +393,10 @@ const { renderedIngredients, addIngredient } = useOptimisticIngredients(
           <Link
             replace
             to="update-meal-plan"
-            className="flex flex-col justify-center"
+            className={classNames(
+              'flex flex-col justify-center',
+              data.recipe?.mealPlanMultiplier !== null ? 'text-primary' : '',
+            )}
           >
             <CalendarIcon />
           </Link>

@@ -1,4 +1,4 @@
-import { useMatches } from '@remix-run/react';
+import { useLocation, useMatches } from '@remix-run/react';
 import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 
 /**No se donde se usa */
@@ -67,4 +67,15 @@ export function useDebounceFunction<T extends Array<unknown>>(
 
   // Retornamos la función "debounceada" para que pueda ser utilizada.
   return debouncedFn;
+}
+
+export function useBuildSearchParams() {
+  const location = useLocation(); // La URL actual
+
+  return (name: string, value: string) => {
+    const searchParam = new URLSearchParams(location.search); // Convertir la búsqueda en un objeto
+    searchParam.set(name, value); // Actualizar el parámetro
+
+    return `?${searchParam.toString()}`; // Añadir el prefijo "?" y convertir a string
+  };
 }
