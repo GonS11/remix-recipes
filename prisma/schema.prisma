@@ -54,7 +54,6 @@ model PantryItem{
   updateAt DateTime @updatedAt
 
   user User @relation(fields: [userId],references: [id])
-
   shelf PantryShelf @relation(fields: [shelfId],references: [id],onDelete: Cascade)
 }
 
@@ -67,6 +66,7 @@ model Recipe{
   totalTime String
   imageUrl  String
   userId  String
+  mealPlanMultiplier Int?
 
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt

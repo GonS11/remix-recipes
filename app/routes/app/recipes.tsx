@@ -4,6 +4,7 @@ import {
   NavLink,
   Outlet,
   redirect,
+  useFetchers,
   useLoaderData,
   useLocation,
   useNavigation,
@@ -71,6 +72,9 @@ export default function Recipes() {
 
   //Para el pending UI, usar navigation y quitar reloadDocument
 
+  //useFetchers devuelve todos los fetcher que estan activos
+  const fetchers = useFetchers();
+
   return (
     <RecipePageWrapper>
       {/**Lado izquierdo con las recetas */}
@@ -91,6 +95,24 @@ export default function Recipes() {
             // Para saber si la receta está en proceso de cargarse, comprobamos si la URL de navegación actual termina con el ID de la receta.
             const isLoading = navigation.location?.pathname.endsWith(recipe.id);
 
+            //Almacenamos fetchers resultados
+            const optimisticData = new Map();
+
+            //Para cada recipeCard sacamos los fetcher
+            for (const fetcher of fetchers) {
+              if (fetcher.formAction?.includes(recipe.id)) {
+                if (fetcher.formData?.get('_action') === 'saveName') {
+                  optimisticData.set('name', fetcher.formData?.get('name'));
+                }
+
+                if (fetcher.formData?.get('_action') === 'saveTotalTime') {
+                  optimisticData.set(
+                    'totalTime',
+                    fetcher.formData?.get('totalTime'),
+                  );
+                }
+              }
+            }
             return (
               <li className="my-4" key={recipe.id}>
                 {/**
@@ -115,8 +137,10 @@ export default function Recipes() {
                      * - `isActive` indica si la ruta actual coincide con la ruta del enlace.
                      */
                     <RecipeCard
-                      name={recipe.name} // Nombre de la receta
-                      totalTime={recipe.totalTime} // Tiempo total de preparación
+                      name={optimisticData.get('name') ?? recipe.name} // Nombre de la receta
+                      totalTime={
+                        optimisticData.get('totalTime') ?? recipe.totalTime
+                      } // Tiempo total de preparación
                       imageUrl={recipe.imageUrl} // URL de la imagen de la receta
                       isActive={isActive} // Indica si esta tarjeta está activa
                       isLoading={isLoading} // Indica si la receta está en proceso de cargarse

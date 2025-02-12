@@ -8,7 +8,7 @@ import {
   useLoaderData,
   useRouteError,
 } from '@remix-run/react';
-import React from 'react';
+import React, { useState } from 'react';
 import { z } from 'zod';
 import {
   DeleteButton,
@@ -20,7 +20,11 @@ import { SaveIcon, TimeIcon, TrashIcon } from '~/components/icons';
 import db from '~/db.server';
 import { handleDelete } from '~/models/utils';
 import { requireLoggedInUser } from '~/utils/auth.server';
-import { classNames, useDebounceFunction } from '~/utils/misc';
+import {
+  classNames,
+  useDebounceFunction,
+  useServerLayoutEffect,
+} from '~/utils/misc';
 import validateForm from '~/utils/validation';
 
 //==============================LOADER===========================================================
@@ -300,8 +304,21 @@ export default function RecipeDetail() {
   const saveNameFetcher = useFetcher();
   const saveTotalTimeFetcher = useFetcher();
   const saveInstructionsFetcher = useFetcher();
+  const createIngredientFetcher = useFetcher();
 
   const debouncedTime = 1000;
+
+  /*   Ahora usaria esto para mapear en vez de los ingradientes para la lista de ingredientes pero es demasiado optimistic UI
+const { renderedIngredients, addIngredient } = useOptimisticIngredients(
+    data.recipe.ingredients,
+    createIngredientFetcher.state,
+  ); */
+
+  //Creamos un estado para guardar valores y asi usarlos en el boton para su fetcher de new ingredient
+  const [createIngredientForm, setCreateIngredientForm] = useState({
+    amount: '',
+    name: '',
+  });
 
   //Usaremos el customHook debounce
   const saveName = useDebounceFunction(
@@ -339,6 +356,18 @@ export default function RecipeDetail() {
       ),
     debouncedTime,
   );
+
+  const createIngredient = () => {
+    createIngredientFetcher.submit(
+      {
+        _action: 'createIngredient',
+        newIngredientAmount: createIngredientForm.amount,
+        newIngredientName: createIngredientForm.name,
+      },
+      { method: 'post' },
+    );
+    setCreateIngredientForm({ amount: '', name: '' });
+  };
 
   // Para poder mostrar esta nested route (Su contenido), el padre debe tener un Outlet
   return (
@@ -417,9 +446,24 @@ export default function RecipeDetail() {
             autoComplete="off"
             name="newIngredientAmount"
             className="border-b-gray-200"
-            error={!!actionData?.errors?.newIngredientAmount}
+            error={
+              !!(
+                createIngredientFetcher.data?.errors?.newIngredientAmoun ??
+                actionData?.errors?.newIngredientAmount
+              )
+            }
+            value={createIngredientForm.amount}
+            onChange={(e) =>
+              setCreateIngredientForm((values) => ({
+                ...values,
+                amount: e.target.value,
+              }))
+            }
           />
-          <ErrorMessage>{actionData?.errors?.newIngredientAmount}</ErrorMessage>
+          <ErrorMessage>
+            {createIngredientFetcher.data?.errors?.newIngredientAmoun ??
+              actionData?.errors?.newIngredientAmount}
+          </ErrorMessage>
         </div>
         <div>
           <Input
@@ -427,11 +471,33 @@ export default function RecipeDetail() {
             autoComplete="off"
             name="newIngredientName"
             className="border-b-gray-200"
-            error={!!actionData?.errors?.newIngredientName}
+            error={
+              !!(
+                createIngredientFetcher.data?.errors?.newIngredientName ??
+                actionData?.errors?.newIngredientName
+              )
+            }
+            value={createIngredientForm.name}
+            onChange={(e) =>
+              setCreateIngredientForm((values) => ({
+                ...values,
+                name: e.target.value,
+              }))
+            }
           />
-          <ErrorMessage>{actionData?.errors?.newIngredientName}</ErrorMessage>
+          <ErrorMessage>
+            {createIngredientFetcher.data?.errors?.newIngredientName ??
+              actionData?.errors?.newIngredientName}
+          </ErrorMessage>
         </div>
-        <button name="_action" value="createIngredient">
+        <button
+          name="_action"
+          value="createIngredient"
+          onClick={(e) => {
+            e.preventDefault();
+            createIngredient();
+          }}
+        >
           <SaveIcon />
         </button>
       </div>
@@ -487,6 +553,7 @@ type IngredientRowProps = {
 
 // Se crea una función para la parte de toda la lista de ingredientes y con cambio de variables de ingredient.id por id... etc. Para crear componente con props
 
+//======================================================
 function IngredientRow({
   id,
   amount,
@@ -562,6 +629,48 @@ function IngredientRow({
       </button>
     </React.Fragment>
   );
+}
+
+//--------------OPTIMISTIC ITEMS----------
+type RenderedIngredient = {
+  id: string; //Tenemos que crear un id temporal siempre que creemos un Ingredient optimista
+  name: string;
+  amount: string | null;
+  isOptimistic?: boolean; //Sirve para deshabilitar el boton de eliminar Ingredient, ya que si es optimista y aun no se ha renderizado no funciona y es inutil hasta que no se renderize del todo
+};
+
+function useOptimisticIngredients(
+  savedIngredients: Array<RenderedIngredient>,
+  createShelfIngredientState: 'idle' | 'submitting' | 'loading',
+) {
+  const [optimisticIngredients, setOptimisticIngredients] = React.useState<
+    Array<RenderedIngredient>
+  >([]);
+
+  const renderedIngredients = [...savedIngredients, ...optimisticIngredients];
+
+  //useLayoutEffect es como useEffect pero se ejecuta antes de que react incluya los cambios en la UI
+  //Sirve para eliminar los Ingredients optimistas cuando se renderizan los del servidor
+  useServerLayoutEffect(() => {
+    if (createShelfIngredientState === 'idle') {
+      //Prevenir un bug que elimina Ingredient si se borra a la vez que se crea otro, que se controle segun el estado de actualizacion/renderizado este
+      setOptimisticIngredients([]);
+    }
+  }, [createShelfIngredientState]);
+
+  const addIngredient = (amount: string | null, name: string) => {
+    setOptimisticIngredients((ingredients) => [
+      ...ingredients,
+      { id: createIngredientId(), name, amount, isOptimistic: true },
+    ]);
+  };
+
+  return { renderedIngredients, addIngredient };
+}
+
+function createIngredientId() {
+  //Crea un id aleatorio para optimisticUI Item
+  return `${Math.round(Math.random() * 1_000_000)}`;
 }
 
 export function ErrorBoundary() {
