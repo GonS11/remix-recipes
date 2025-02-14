@@ -11,7 +11,7 @@ import {
   useNavigation,
   useSearchParams,
 } from '@remix-run/react';
-import { PrimaryButton, SearchBar } from '~/components/forms';
+import { DeleteButton, PrimaryButton, SearchBar } from '~/components/forms';
 import { CalendarIcon, PlusIcon } from '~/components/icons';
 import {
   RecipeCard,
@@ -63,21 +63,42 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   //Solo crea recetas que le pertenecen
   const user = await requireLoggedInUser(request);
+  const formData = await request.formData();
 
-  const recipe = await db.recipe.create({
-    data: {
-      userId: user.id,
-      name: 'New Recipe',
-      totalTime: '0 min',
-      imageUrl: 'https://via.placeholder.com/150?text=Remix+Recipes',
-      instructions: '',
-    },
-  });
+  switch (formData.get('_action')) {
+    case 'createRecipe': {
+      const recipe = await db.recipe.create({
+        data: {
+          userId: user.id,
+          name: 'New Recipe',
+          totalTime: '0 min',
+          imageUrl: 'https://via.placeholder.com/150?text=Remix+Recipes',
+          instructions: '',
+        },
+      });
 
-  const url = new URL(request.url); //Como le pasamos todo la url, tambien va el valor de busqueda (Solo se modifica el pathname)
-  url.pathname = `/app/recipes/${recipe.id}`;
-  //Creacion de ruta dinamica personalizada para cada recipe details (Se muestra en el Outlet, dos rutas a la vez). Tambien lo redirigimos con el valor de busqueda para que no se actualice al crear algo nuevo
-  return redirect(url.toString());
+      const url = new URL(request.url); //Como le pasamos todo la url, tambien va el valor de busqueda (Solo se modifica el pathname)
+      url.pathname = `/app/recipes/${recipe.id}`;
+      //Creacion de ruta dinamica personalizada para cada recipe details (Se muestra en el Outlet, dos rutas a la vez). Tambien lo redirigimos con el valor de busqueda para que no se actualice al crear algo nuevo
+      return redirect(url.toString());
+    }
+    case 'clearMealPlan': {
+      await db.recipe.updateMany({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          mealPlanMultiplier: null,
+        },
+      });
+
+      //Redireccopm y se actualiza todo
+      return redirect('/app/recipes');
+    }
+    default: {
+      return null;
+    }
+  }
 }
 
 //==============================COMPONENTE PRINCIPAL====================================================
@@ -94,7 +115,7 @@ export default function Recipes() {
 
   //-----------Filtrar por mealPlan (filter) + SearchBar (q)--------------
   const [searchParams] = useSearchParams();
-  const mealPlanOnly = searchParams.get('filter') === 'mealPlanOnly';
+  const mealPlanOnlyFilterOn = searchParams.get('filter') === 'mealPlanOnly';
   const buildSearchParams = useBuildSearchParams(); //Nuestro hook para filter + busqueda/SearchBar (q) en la URL a la vez
 
   //Ahora tenemos que hacerlo para que coexistan al reves, al buscar se actualiza, queremos que coexista con filter -> Añadir hidden input en SeachBar
@@ -109,25 +130,43 @@ export default function Recipes() {
           {/**Como no paso info puedo usar un Link y no un Form, al poner como to ?filter, se recarga y lo añade a la URL. Queremos que se pueda seguir buscar aun, creamos un hook en misc */}
           {/**Se redirige y estila segun si de ha clickado o no */}
           <Link
-            to={buildSearchParams('filter', mealPlanOnly ? '' : 'mealPlanOnly')}
+            to={buildSearchParams(
+              'filter',
+              mealPlanOnlyFilterOn ? '' : 'mealPlanOnly',
+            )}
             className={classNames(
               //Centrado vertical de Icon + Border
               'flex flex-col justify-center border-2 border-primary rounded-md px-2',
-              mealPlanOnly ? 'text-white bg-primary' : 'text-primary',
+              mealPlanOnlyFilterOn ? 'text-white bg-primary' : 'text-primary',
             )}
           >
             <CalendarIcon />
           </Link>
         </div>
 
-        {/**-----------Boton Crear Recetas----------*/}
+        {/**-----------Boton Crear Recetas + Eliminar Meal Plan----------*/}
         <Form method="post" className="mt-4">
-          <PrimaryButton className="w-full">
-            <div className="flex w-full justify-center">
-              <PlusIcon />
-              <span className="ml-2">Create New Recipe</span>
-            </div>
-          </PrimaryButton>
+          {/**Si se da al boton de mealPlan te deja eliminar todo el plan sino se renderiza el boton normal de crear receta */}
+          {mealPlanOnlyFilterOn ? (
+            <DeleteButton
+              name="_action"
+              value="clearMealPlan"
+              className="w-full"
+            >
+              Clear Plan
+            </DeleteButton>
+          ) : (
+            <PrimaryButton
+              name="_action"
+              value="createRecipe"
+              className="w-full"
+            >
+              <div className="flex w-full justify-center">
+                <PlusIcon />
+                <span className="ml-2">Create New Recipe</span>
+              </div>
+            </PrimaryButton>
+          )}
         </Form>
 
         {/**--------Listado de RecipeCards---------- */}

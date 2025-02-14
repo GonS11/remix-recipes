@@ -12,3 +12,11 @@ export const sessionCookie = createCookie('remix-recipes__session', {
   secure: process.env.NODE_ENV === 'production', // Solo seguro en producción, solo true cuando no es desarrollo
   sameSite: 'lax',
 });
+
+//Creamos una cookie theme nueva para que no se quede en el de la sesion y asi no se elimina al eliminar la sesion/logout
+export const themeCookie = createCookie('remix-recipes__theme', {
+  path: '/', // Asegura que sea accesible en toda la app
+  httpOnly: false, // Necesario para acceder desde el frontend
+  secure: process.env.NODE_ENV === 'production', // Solo en HTTPS si es producción
+  sameSite: 'lax', // Evita problemas con navegadores
+});

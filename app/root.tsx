@@ -32,6 +32,7 @@ import classNames from 'classnames';
 import { getCurrentUSer } from './utils/auth.server';
 
 export const links: LinksFunction = () => [
+  { rel: 'stylesheet', href: '/theme.css' },
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
   {
     rel: 'preconnect',
