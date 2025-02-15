@@ -21,38 +21,41 @@ model User{
   firstName String
   lastName String
 
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-//Relacion 1 a muchos como shelf con items
+//Se relaciona 1:muchos con shelves, items y recipes
   pantryShelves PantryShelf[]
   pantryItems PantryItem[]
-  recipes  Recipe[]
+  recipes Recipe[]
 }
 
 //Para crear tablas creamos modelos. SIEMPRE CADA MODELO NECESITA @id (@=atributo, id=PK). ciud() genera id unico, NO PUEDE SER ESTATICO
 model PantryShelf{
   id String @id @default(cuid())
-  name String 
-  userId String 
+  name String
+  userId String
 
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId],references: [id])
-  
-  items PantryItem[]
+//R/C User
+user User @relation(fields: [userId],references: [id])
+
+//Se relaciona 1:muchos con items
+items PantryItem[]
 }
 
 model PantryItem{
   id String @id @default(cuid())
-  name String 
+  name String
   shelfId String
   userId String
 
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  //R/C User y Shelf
   user User @relation(fields: [userId],references: [id])
   shelf PantryShelf @relation(fields: [shelfId],references: [id],onDelete: Cascade)
 }
@@ -60,30 +63,33 @@ model PantryItem{
 //Si se hacen modificaciones en el schema.prisma model, en la consola poner (Parar todo):
 // - npx prisma db push
 model Recipe{
-  id  String @id @default(cuid())
+  id String @id @default(cuid())
   name String
   instructions String
   totalTime String
-  imageUrl  String
-  userId  String
+  imageUrl String
+  userId String
   mealPlanMultiplier Int?
 
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  //R/C User
   user User @relation(fields: [userId],references: [id])
-  ingredients  Ingredient[]
+  
+  //Se relaciona 1:muchos con ingredientes
+  ingredients Ingredient[]
 }
 
 model Ingredient{
-  id  String @id @default(cuid())
-  name  String
-  amount  String
-  recipeId  String
+  id String @id @default(cuid())
+  name String
+  amount String
+  recipeId String
 
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  recipe  Recipe  @relation(fields: [recipeId],references: [id],onDelete: Cascade)
+  //R/C Recipe
+  recipe Recipe @relation(fields: [recipeId],references: [id],onDelete: Cascade)
 }
-

@@ -22,7 +22,7 @@ export function getAllShelves(userId: string, query: string | null) {
       },
     },
     orderBy: {
-      createAt: 'desc',
+      createdAt: 'desc',
     },
   });
 }

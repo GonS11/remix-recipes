@@ -6,7 +6,7 @@ export async function loader() {
   //En discover queremos mostras las ultimas 25 recetas y el usuario al que pertenecen
   const recipes = await db.recipe.findMany({
     take: 25,
-    orderBy: { updateAt: 'desc' },
+    orderBy: { updatedAt: 'desc' },
     include: { user: { select: { firstName: true, lastName: true } } },
   });
 

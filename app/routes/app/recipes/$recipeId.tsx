@@ -49,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ingredients: {
         select: { id: true, amount: true, name: true },
         orderBy: {
-          createAt: 'desc',
+          createdAt: 'desc',
         },
       },
     }, // Accedemos a la ID de la receta desde los parámetros. params.recipeId TIENE QUE SER IGUAL AL DE LA RUTA DINAMICA $recipeId

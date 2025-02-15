@@ -51,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       mealPlanMultiplier: true,
     },
     orderBy: {
-      createAt: 'desc',
+      createdAt: 'desc',
     },
   });
 
