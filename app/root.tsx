@@ -25,6 +25,7 @@ import {
   LoginIcon,
   LogoutIcon,
   SettingIcon,
+  SocialMediaIcon,
 } from './components/icons';
 import React from 'react';
 import classNames from 'classnames';
@@ -113,9 +114,15 @@ export default function App() {
             </AppNavLink>
           ) : null}
 
-          <AppNavLink to="settings">
+          <AppNavLink to="settings/app">
             <SettingIcon />
           </AppNavLink>
+
+          {data.isLoggedIn ? (
+            <AppNavLink to="social/feed">
+              <SocialMediaIcon />
+            </AppNavLink>
+          ) : null}
         </ul>
         <ul>
           {data.isLoggedIn ? (

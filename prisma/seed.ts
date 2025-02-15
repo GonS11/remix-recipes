@@ -133,26 +133,218 @@ function getRecipes(userId: string) {
   ];
 }
 
+function getPosts(userId: string) {
+  return [
+    {
+      title: 'Cómo hacer pancakes perfectos',
+      message:
+        'Los pancakes son un desayuno clásico que nunca pasa de moda. En este post te enseñamos los secretos para hacerlos esponjosos y deliciosos. ¡No te lo pierdas!',
+      imageUrl:
+        'https://images.unsplash.com/photo-1528207776546-365bb710ee93?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80',
+      userId, // Asegúrate de asignar el userId al post
+      categories: {
+        create: [
+          {
+            assignedBy: userId, // Usamos el userId como assignedBy
+            category: {
+              create: {
+                name: 'Recetas',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Desayunos',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      title: 'Consejos para cocinar carne asada',
+      message:
+        'La carne asada es un plato que nunca falla en una reunión familiar. Aquí te dejamos algunos consejos para que quede jugosa y llena de sabor. ¡Manos a la obra!',
+      imageUrl:
+        'https://images.pexels.com/photos/1251208/pexels-photo-1251208.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      userId, // Asegúrate de asignar el userId al post
+      categories: {
+        create: [
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Recetas',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Carnes',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      title: 'Postres saludables con frutas',
+      message:
+        '¿Quieres disfrutar de postres deliciosos sin remordimientos? En este post te enseñamos a preparar postres saludables con frutas frescas. ¡Dulce y sano!',
+      imageUrl:
+        'https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      userId, // Asegúrate de asignar el userId al post
+      categories: {
+        create: [
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Postres',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Saludable',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      title: 'Trucos para una pasta perfecta',
+      message:
+        'Cocinar pasta parece sencillo, pero hay secretos para que quede al dente y con un sabor increíble. En este post te contamos todo lo que necesitas saber.',
+      imageUrl:
+        'https://images.pexels.com/photos/1437267/pexels-photo-1437267.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      userId, // Asegúrate de asignar el userId al post
+      categories: {
+        create: [
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Recetas',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Italiana',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+        ],
+      },
+    },
+    {
+      title: 'Cómo preparar un café perfecto',
+      message:
+        'El café es una bebida que despierta pasiones. En este post te enseñamos a preparar un café perfecto, desde el grano hasta la taza. ¡Disfruta cada sorbo!',
+      imageUrl:
+        'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      userId, // Asegúrate de asignar el userId al post
+      categories: {
+        create: [
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Bebidas',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+          {
+            assignedBy: userId,
+            category: {
+              create: {
+                name: 'Desayunos',
+                userId: userId, // Añadimos el userId aquí
+              },
+            },
+          },
+        ],
+      },
+    },
+  ];
+}
+
+function getCategories(userId: string) {
+  return [
+    { name: 'Recetas', userId },
+    { name: 'Desayunos', userId },
+    { name: 'Carnes', userId },
+    { name: 'Postres', userId },
+    { name: 'Saludable', userId },
+  ];
+}
+
 //Se crea esta funcion para que cuando ejecutemos seed de nuevo (Pq hemos actualizado la BD con recipes no se duplique la info de shelves ya que se mapeade de nuevo), siempre mejor borrar todo y volver a cargar
 async function deleteAll() {
-  await db.recipe.deleteMany(); //Como es delete cascade borra ingredientss tambien
-  await db.pantryShelf.deleteMany(); //Borra items tambien
-  await db.user.deleteMany();
+  // Eliminar registros dependientes primero
+  await db.categoriesOnPosts.deleteMany(); // Eliminar relaciones muchos a muchos
+  await db.post.deleteMany(); // Eliminar posts
+  await db.category.deleteMany(); // Eliminar categorías
+
+  await db.recipe.deleteMany(); // Eliminar recetas (y sus ingredientes debido a onDelete: Cascade)
+  await db.pantryItem.deleteMany(); // Eliminar items de la despensa
+  await db.pantryShelf.deleteMany(); // Eliminar estantes de la despensa
+  await db.user.deleteMany(); // Finalmente, eliminar usuarios
 }
 
 //Esta funcion devuelve una promesa asi que tenemos que crear un async await
 async function createAll() {
   const user = await createUser();
 
-  //Promise.all es una lista de promesas y espera a todas a la vez
+  // Crear shelves y recipes
   await Promise.all([
     ...getShelves(user.id).map((shelf) =>
       db.pantryShelf.create({ data: shelf }),
     ),
     ...getRecipes(user.id).map((recipe) => db.recipe.create({ data: recipe })),
   ]);
-}
 
+  // Crear categories (asociadas al usuario)
+  await Promise.all(
+    getCategories(user.id).map((category) =>
+      db.category.create({ data: category }),
+    ),
+  );
+
+  // Crear posts y sus relaciones con categories (asociados al usuario)
+  await Promise.all(
+    getPosts(user.id).map((post) =>
+      db.post.create({
+        data: {
+          title: post.title,
+          message: post.message,
+          imageUrl: post.imageUrl,
+          userId: post.userId, // Asegúrate de asignar el userId al post
+          categories: post.categories,
+        },
+      }),
+    ),
+  );
+}
 /* async function seed() {
   await db.pantryShelf.create({
     data: {

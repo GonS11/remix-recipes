@@ -4,6 +4,16 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+/* PARA MODIFICACIONES SQUEMA + SEED
+Modifciar esquema
+npx prisma migrate dev --name nombre_de_la_migracion
+npx prisma generate
+Modificar seed
+npx prisma db seed
+npx prisma studio
+*/
+
+
 //generator especifica el paquete que usa prisma Client
 generator client {
   provider = "prisma-client-js"
@@ -28,6 +38,11 @@ model User{
   pantryShelves PantryShelf[]
   pantryItems PantryItem[]
   recipes Recipe[]
+
+// Relaciones 1 a muchos
+  posts Post[]
+  categories Category[]
+
 }
 
 //Para crear tablas creamos modelos. SIEMPRE CADA MODELO NECESITA @id (@=atributo, id=PK). ciud() genera id unico, NO PUEDE SER ESTATICO
@@ -93,3 +108,60 @@ model Ingredient{
   //R/C Recipe
   recipe Recipe @relation(fields: [recipeId],references: [id],onDelete: Cascade)
 }
+
+// Modelo Post: Representa una publicación.
+model Post {
+  id    Int    @id @default(autoincrement()) // ID único autoincremental.
+  title String // Título del post.
+  message String
+  imageUrl String
+  userId      String        
+
+// Relación con User
+  user User @relation(fields: [userId], references: [id])
+  // Relación muchos a muchos con Category a través del modelo intermedio CategoriesOnPosts.
+  categories CategoriesOnPosts[]
+}
+
+// Modelo Category: Representa una categoría.
+model Category {
+  id   Int    @id @default(autoincrement()) // ID único autoincremental.
+  name String // Nombre de la categoría.
+  userId      String        
+        
+// Relación con User
+  user User @relation(fields: [userId], references: [id])
+  // Relación muchos a muchos con Post a través del modelo intermedio CategoriesOnPosts.
+  posts CategoriesOnPosts[]
+}
+
+// Modelo intermedio CategoriesOnPosts: Representa la relación muchos a muchos entre Post y Category.
+model CategoriesOnPosts {
+  // Relación con Post: Cada registro en este modelo está asociado a un Post.
+  post    Post    @relation(fields: [postId], references: [id])
+  postId  Int     // Campo escalar que almacena el ID del Post.
+
+  // Relación con Category: Cada registro en este modelo está asociado a una Category.
+  category Category @relation(fields: [categoryId], references: [id])
+  categoryId Int    // Campo escalar que almacena el ID de la Category.
+
+  // Atributos adicionales de la relación:
+  assignedAt DateTime @default(now()) // Fecha en que se asignó la categoría al post.
+  assignedBy String                  // Quién asignó la categoría al post.
+
+  // Clave primaria compuesta: Combina postId y categoryId para garantizar unicidad.
+  @@id([postId, categoryId])
+}
+
+/* ALTERNATIVA MUCHOS A MUCHOS IMPLICITA
+model Post {
+  id         Int        @id @default(autoincrement())
+  title      String
+  categories Category[] // Relación muchos a muchos implícita.
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  posts Post[] // Relación muchos a muchos implícita.
+}*/
