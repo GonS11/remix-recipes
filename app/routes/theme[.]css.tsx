@@ -7,17 +7,14 @@ import { themeCookie } from '~/cookies';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookieHeader = request.headers.get('cookie');
-  const theme = await themeCookie.parse(cookieHeader);
-
-  //console.log('Loaded theme:', theme);
+  const theme = (await themeCookie.parse(cookieHeader)) ?? '#00743e'; // Valor predeterminado
 
   const data = `
   :root {
-    --color-primary: ${theme ?? '#00743e'};
-    --color-primary-light: ${lightenHexColor(theme, 1.5) ?? '#4c9d77'}
+    --color-primary: ${theme};
+    --color-primary-light: ${lightenHexColor(theme, 1.5)}
   }
   `;
-
   return new Response(data, {
     headers: { 'content-type': 'text/css' },
   });
