@@ -1,4 +1,3 @@
-import { Form } from '@remix-run/react';
 import { classNames } from '~/utils/misc';
 
 type PostsPageWrapperProps = {
@@ -6,7 +5,11 @@ type PostsPageWrapperProps = {
 };
 
 export function PostsPageWrapper({ children }: PostsPageWrapperProps) {
-  return <div className="flex flex-col md:flex-row h-full">{children}</div>;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 w-full h-full gap-4 p-4">
+      {children}
+    </div>
+  );
 }
 
 type PostsListWrapperProps = {
@@ -23,26 +26,12 @@ export function PostsListWrapper({
   return (
     <div
       className={classNames(
-        'flex flex-col p-4 m-2 gap-4 rounded-md shadow-sm bg-white w-full md:w-1/3', // Añade un ancho en pantallas grandes
+        'flex flex-col p-4 gap-4 bg-primary-light2 rounded-md shadow-sm w-full  md:w-4/5',
         className,
       )}
     >
       <div className="flex flex-col md:flex-row justify-between items-center gap-2">
         <h1 className="text-xl font-semibold">{categoryName}</h1>
-        <Form
-          method="post"
-          action="/ruta-de-accion"
-          className="w-full md:w-auto"
-        >
-          <button
-            className="w-full md:w-auto p-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors"
-            name="_action"
-            value="newPost"
-            aria-label="Create new post"
-          >
-            New Post
-          </button>
-        </Form>
       </div>
       <div className="flex flex-col gap-2">{children}</div>
     </div>

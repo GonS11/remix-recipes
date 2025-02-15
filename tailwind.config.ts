@@ -7,6 +7,7 @@ export default {
       colors: {
         primary: 'var(--color-primary)',
         'primary-light': 'var(--color-primary-light)',
+        'primary-light2': 'var(--color-primary-light2)',
         background: 'white',
       },
       fontFamily: {

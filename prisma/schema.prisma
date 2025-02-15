@@ -41,7 +41,6 @@ model User{
 
 // Relaciones 1 a muchos
   posts Post[]
-  categories Category[]
 
 }
 
@@ -109,7 +108,32 @@ model Ingredient{
   recipe Recipe @relation(fields: [recipeId],references: [id],onDelete: Cascade)
 }
 
-// Modelo Post: Representa una publicación.
+//ALTERNATIVA MUCHOS A MUCHOS IMPLICITA
+model Post {
+  id       String @id @default(cuid())
+  title     String
+  message   String
+  imageUrl  String @default("https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1")
+  userId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+  categories Category[] // Relación muchos a muchos implícita
+}
+
+model Category {
+  id    String @id @default(cuid())
+  name  String @unique //Para usar upsert al crear y asi si yaexiste no se crea
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts Post[] // Relación muchos a muchos implícita
+}
+
+/* // Modelo Post: Representa una publicación.
 model Post {
   id    Int    @id @default(autoincrement()) // ID único autoincremental.
   title String // Título del post.
@@ -151,17 +175,5 @@ model CategoriesOnPosts {
 
   // Clave primaria compuesta: Combina postId y categoryId para garantizar unicidad.
   @@id([postId, categoryId])
-}
-
-/* ALTERNATIVA MUCHOS A MUCHOS IMPLICITA
-model Post {
-  id         Int        @id @default(autoincrement())
-  title      String
-  categories Category[] // Relación muchos a muchos implícita.
-}
-
-model Category {
-  id    Int    @id @default(autoincrement())
-  name  String
-  posts Post[] // Relación muchos a muchos implícita.
 }*/
+

@@ -12,7 +12,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const data = `
   :root {
     --color-primary: ${theme};
-    --color-primary-light: ${lightenHexColor(theme, 1.5)}
+    --color-primary-light: ${lightenHexColor(theme, 1.5)};
+    --color-primary-light2: ${lightenHexColor(theme, 1.5, 0.4)};
   }
   `;
   return new Response(data, {
@@ -27,23 +28,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }); */
 }
 
-function lightenHexColor(hex: string, factor: number): string {
-  // Elimina el "#" si está presente
-  hex = hex.replace(/^#/, '');
+export function lightenHexColor(
+  color: string,
+  factor: number,
+  alpha?: number,
+): string {
+  if (!/^#([0-9A-Fa-f]{6})$/.test(color)) {
+    throw new Error('Invalid hex color format. Use #RRGGBB.');
+  }
 
-  // Convierte el color hexadecimal a RGB
+  // Extraer los valores RGB
+  const hex = color.slice(1);
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
 
-  // Aclara los componentes RGB
+  // Función para aclarar los valores RGB
   const lighten = (value: number) => Math.min(255, Math.round(value * factor));
 
   const newR = lighten(r);
   const newG = lighten(g);
   const newB = lighten(b);
 
-  // Convierte de nuevo a hexadecimal
+  // Convertir de nuevo a formato hexadecimal
   const toHex = (value: number) => value.toString(16).padStart(2, '0');
+
+  // Si se proporciona alpha, devolver en formato rgba
+  if (alpha !== undefined) {
+    return `rgba(${newR}, ${newG}, ${newB}, ${alpha})`;
+  }
+
   return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`;
 }

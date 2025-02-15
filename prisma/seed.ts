@@ -133,6 +133,7 @@ function getRecipes(userId: string) {
   ];
 }
 
+// Obtener datos para los posts
 function getPosts(userId: string) {
   return [
     {
@@ -141,29 +142,8 @@ function getPosts(userId: string) {
         'Los pancakes son un desayuno clásico que nunca pasa de moda. En este post te enseñamos los secretos para hacerlos esponjosos y deliciosos. ¡No te lo pierdas!',
       imageUrl:
         'https://images.unsplash.com/photo-1528207776546-365bb710ee93?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80',
-      userId, // Asegúrate de asignar el userId al post
-      categories: {
-        create: [
-          {
-            assignedBy: userId, // Usamos el userId como assignedBy
-            category: {
-              create: {
-                name: 'Recetas',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Desayunos',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-        ],
-      },
+      userId,
+      categoryNames: ['Recetas', 'Desayunos'], // Nombres de las categorías
     },
     {
       title: 'Consejos para cocinar carne asada',
@@ -171,29 +151,8 @@ function getPosts(userId: string) {
         'La carne asada es un plato que nunca falla en una reunión familiar. Aquí te dejamos algunos consejos para que quede jugosa y llena de sabor. ¡Manos a la obra!',
       imageUrl:
         'https://images.pexels.com/photos/1251208/pexels-photo-1251208.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      userId, // Asegúrate de asignar el userId al post
-      categories: {
-        create: [
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Recetas',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Carnes',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-        ],
-      },
+      userId,
+      categoryNames: ['Recetas', 'Carnes'],
     },
     {
       title: 'Postres saludables con frutas',
@@ -201,29 +160,8 @@ function getPosts(userId: string) {
         '¿Quieres disfrutar de postres deliciosos sin remordimientos? En este post te enseñamos a preparar postres saludables con frutas frescas. ¡Dulce y sano!',
       imageUrl:
         'https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      userId, // Asegúrate de asignar el userId al post
-      categories: {
-        create: [
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Postres',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Saludable',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-        ],
-      },
+      userId,
+      categoryNames: ['Postres', 'Saludable'],
     },
     {
       title: 'Trucos para una pasta perfecta',
@@ -231,29 +169,8 @@ function getPosts(userId: string) {
         'Cocinar pasta parece sencillo, pero hay secretos para que quede al dente y con un sabor increíble. En este post te contamos todo lo que necesitas saber.',
       imageUrl:
         'https://images.pexels.com/photos/1437267/pexels-photo-1437267.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      userId, // Asegúrate de asignar el userId al post
-      categories: {
-        create: [
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Recetas',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Italiana',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-        ],
-      },
+      userId,
+      categoryNames: ['Recetas', 'Italiana'],
     },
     {
       title: 'Cómo preparar un café perfecto',
@@ -261,47 +178,28 @@ function getPosts(userId: string) {
         'El café es una bebida que despierta pasiones. En este post te enseñamos a preparar un café perfecto, desde el grano hasta la taza. ¡Disfruta cada sorbo!',
       imageUrl:
         'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      userId, // Asegúrate de asignar el userId al post
-      categories: {
-        create: [
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Bebidas',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-          {
-            assignedBy: userId,
-            category: {
-              create: {
-                name: 'Desayunos',
-                userId: userId, // Añadimos el userId aquí
-              },
-            },
-          },
-        ],
-      },
+      userId,
+      categoryNames: ['Bebidas', 'Desayunos'],
     },
   ];
 }
 
-function getCategories(userId: string) {
+// Obtener datos para las categorías
+function getCategories() {
   return [
-    { name: 'Recetas', userId },
-    { name: 'Desayunos', userId },
-    { name: 'Carnes', userId },
-    { name: 'Postres', userId },
-    { name: 'Saludable', userId },
+    { name: 'Recetas' },
+    { name: 'Desayunos' },
+    { name: 'Carnes' },
+    { name: 'Postres' },
+    { name: 'Saludable' },
+    { name: 'Italiana' },
+    { name: 'Bebidas' },
   ];
 }
 
 //Se crea esta funcion para que cuando ejecutemos seed de nuevo (Pq hemos actualizado la BD con recipes no se duplique la info de shelves ya que se mapeade de nuevo), siempre mejor borrar todo y volver a cargar
 async function deleteAll() {
   // Eliminar registros dependientes primero
-  await db.categoriesOnPosts.deleteMany(); // Eliminar relaciones muchos a muchos
   await db.post.deleteMany(); // Eliminar posts
   await db.category.deleteMany(); // Eliminar categorías
 
@@ -323,14 +221,18 @@ async function createAll() {
     ...getRecipes(user.id).map((recipe) => db.recipe.create({ data: recipe })),
   ]);
 
-  // Crear categories (asociadas al usuario)
+  // Crear categorías
   await Promise.all(
-    getCategories(user.id).map((category) =>
-      db.category.create({ data: category }),
+    getCategories().map((category) =>
+      db.category.upsert({
+        where: { name: category.name }, // Usar `name` como único
+        update: {}, // Si existe, no hacer nada
+        create: category, // Si no existe, crear la categoría
+      }),
     ),
   );
 
-  // Crear posts y sus relaciones con categories (asociados al usuario)
+  // Crear posts y asociar categorías
   await Promise.all(
     getPosts(user.id).map((post) =>
       db.post.create({
@@ -338,13 +240,18 @@ async function createAll() {
           title: post.title,
           message: post.message,
           imageUrl: post.imageUrl,
-          userId: post.userId, // Asegúrate de asignar el userId al post
-          categories: post.categories,
+          userId: post.userId,
+          categories: {
+            connect: post.categoryNames.map((name) => ({
+              name, // Conectar por `name`
+            })),
+          },
         },
       }),
     ),
   );
 }
+
 /* async function seed() {
   await db.pantryShelf.create({
     data: {

@@ -109,20 +109,20 @@ export default function App() {
             <DiscoverIcon />
           </AppNavLink>
           {data.isLoggedIn ? (
-            <AppNavLink to="app/recipes">
-              <BookIcon />
-            </AppNavLink>
+            <>
+              <AppNavLink to="app/recipes">
+                <BookIcon />
+              </AppNavLink>
+
+              <AppNavLink to="social/feed">
+                <SocialMediaIcon />
+              </AppNavLink>
+            </>
           ) : null}
 
           <AppNavLink to="settings/app">
             <SettingIcon />
           </AppNavLink>
-
-          {data.isLoggedIn ? (
-            <AppNavLink to="social/feed">
-              <SocialMediaIcon />
-            </AppNavLink>
-          ) : null}
         </ul>
         <ul>
           {data.isLoggedIn ? (
