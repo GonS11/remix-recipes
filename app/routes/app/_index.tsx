@@ -8,7 +8,7 @@ export const loader: LoaderFunction = () => {
   }); */
 
   //Simplificado (Antes iba a pantry con /app/pantry)
-  return redirect('/app/recipes');
+  return redirect('/app/recipes', 302);
 
   /**Otra forma con codigo de envio
    * return new Response(null, {
