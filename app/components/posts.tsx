@@ -6,6 +6,7 @@ type PostsPageWrapperProps = {
 
 export function PostsPageWrapper({ children }: PostsPageWrapperProps) {
   return (
+    // Estructura principal de la página de posts
     <div className="grid grid-cols-1 md:grid-cols-3 w-full h-full gap-4 p-4">
       {children}
     </div>
@@ -14,12 +15,10 @@ export function PostsPageWrapper({ children }: PostsPageWrapperProps) {
 
 type PostsListWrapperProps = {
   children: React.ReactNode;
-  categoryName: string;
   className?: string; // Permite personalización adicional
 };
 
 export function PostsListWrapper({
-  categoryName,
   children,
   className,
 }: PostsListWrapperProps) {
@@ -30,9 +29,7 @@ export function PostsListWrapper({
         className,
       )}
     >
-      <div className="flex flex-col md:flex-row justify-between items-center gap-2">
-        <h1 className="text-xl font-semibold">{categoryName}</h1>
-      </div>
+      {/* Contenedor de los posts dentro de la lista */}
       <div className="flex flex-col gap-2">{children}</div>
     </div>
   );
@@ -60,12 +57,17 @@ export function Post({
         className,
       )}
     >
+      {/* Información del post */}
       <div className="flex justify-between items-center">
         <h1 className="text-md font-medium">{title}</h1>
         <span className="text-sm text-gray-600">@{username}</span>
       </div>
+
+      {/* Cuerpo del post */}
       <div className="flex flex-col md:flex-row gap-4">
         <p className="flex-1 p-2 rounded-md bg-gray-100">{message}</p>
+
+        {/* Imagen del post */}
         {imageUrl && (
           <img
             src={imageUrl}
