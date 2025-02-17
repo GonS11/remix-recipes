@@ -25,6 +25,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/*
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id String @id @default(uuid())
+  role Role @default(USER)
+}*/
+
 model User{
   id String @id @default(cuid())
   email String @unique
@@ -177,3 +188,25 @@ model CategoriesOnPosts {
   @@id([postId, categoryId])
 }*/
 
+/*params busqueda
+const users = await prisma.user.findMany({
+  where: {
+    OR: [
+      {
+        name: {
+          startsWith: 'E',
+        },
+      },
+      {
+        AND: {
+          profileViews: {
+            gt: 0,
+          },
+          role: {
+            equals: 'ADMIN',
+          },
+        },
+      },
+    ],
+  },
+})*/

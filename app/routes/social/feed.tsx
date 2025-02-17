@@ -158,7 +158,7 @@ export async function action({ request }: ActionFunctionArgs) {
             };
           }
 
-          // Desconectar la categoría de todos los posts asociados
+          /* // Desconectar la categoría de todos los posts asociados (LO HE COMEMTADO PQ NO TENGO CON QUIEN CONECTARLOS POST, ASI QUE SE ELIMINAN TAMBIEN)
           await db.post.updateMany({
             where: {
               userId: user.id, // Filtrar solo los posts del usuario actual
@@ -171,7 +171,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 disconnect: [{ id: categoryId }], // Desconectar la categoría de los posts
               },
             },
-          });
+          }); */
 
           // Eliminar la categoría
           await db.category.delete({
